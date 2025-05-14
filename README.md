@@ -26,6 +26,9 @@ To load the configuration in the software, it must be in your clipboard, or stor
 
 Example of configuration:
 ```javascript
+/** @typedef {import("./jsdoc/jsdoc")} */
+
+/** @type {IConfig} */
 const config = {
 	nodes: {
 		types: {
@@ -107,6 +110,8 @@ const config = {
 	afterCode: () => '', // code to add before editor fields
 	beforeCode: () => '', // code to add after editor fields
 }
+
+return config;
 ```
 
 `toCodeConverter` can be left empty if you generate the code in the save server.
