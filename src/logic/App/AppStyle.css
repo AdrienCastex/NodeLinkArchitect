@@ -1,0 +1,323 @@
+
+html, body {
+    overflow: hidden;
+    margin: 0px;
+    padding: 0px;
+    font-size: 1rem;
+    min-height: 100vh;
+    font-family: monospace;
+
+    line-height: 1em;
+    cursor: default;
+    
+    overflow: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+*:not(input):not(textarea) {
+    user-select: none;
+}
+
+.viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    
+    background-color: rgb(41, 41, 41);
+    background-image: url("../../../assets/imgs/bg.png");
+}
+
+.viewport-content {
+    transform-origin: top left;
+    width: 100%;
+    height: 100%;
+}
+
+.property:not(.monoline) textarea {
+    height: 100%;
+}
+textarea,
+input:not([type="checkbox"]) {
+    padding: 0.5ch !important;
+    line-height: 1em !important;
+}
+input:not([type="checkbox"]) {
+    height: calc(1em + 0.5ch * 2) !important;
+}
+.text {
+    height: calc(100% - 3em - 3 * 2 * 0.5ch);
+    width: 100%;
+}
+.graph-node {
+    /*min-height: calc(4em + 4 * 2 * 0.5ch);*/
+    min-height: calc(1.5em);
+    min-width: 5ch;
+}
+
+.form-check {
+    display: inline;
+}
+
+.remove-btn,
+.open-subgraph-btn,
+.drag-handle {
+    height: calc(1em + 0.5ch * 2) !important;
+    padding-top: 0.25em;
+    display: inline-block;
+}
+
+.open-subgraph-btn {
+    padding-left: 0.5ch;
+    padding-right: 0.5ch;
+}
+
+.open-subgraph-btn:hover {
+    background-color: rgb(238, 10, 219);
+    color: black;
+}
+.remove-btn:hover {
+    background-color: red;
+}
+.open-subgraph-btn {
+    text-align: center;
+    cursor: pointer;
+}
+.remove-btn {
+    width: 2ch;
+    text-align: center;
+    cursor: pointer;
+}
+
+.sub-graph-controls button {
+    border: 0px;
+    background-color: white;
+    color: black;
+    padding: 0.5ch;
+}
+.sub-graph-controls button:hover {
+    background-color: orange;
+}
+.sub-graph-controls {
+    position: absolute;
+    left: 11px;
+    top: 11px;
+    opacity: 0.3;
+    z-index: 10000;
+}
+.sub-graph-controls:hover {
+    opacity: 1;
+}
+
+.resize-handle {
+    float: right;
+    width: 1em;
+    height: 1em;
+    position: absolute;
+    right: -0.5ch;
+    bottom: -0.5ch;
+    border-top-left-radius: 100%;
+}
+
+.header-table {
+    width: 100%;
+    margin-bottom: 0.25em;
+}
+.header-table > tbody > tr > td:last-child {
+    text-align: right;
+}
+
+svg {
+    position: absolute;
+    pointer-events: none;
+}
+polyline {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    /*stroke: white;*/
+}
+
+.top-right-max,
+.bottom-right-max,
+.top-left-max,
+.bottom-left-max,
+.left-max,
+.right-max,
+.top-max,
+.bottom-max {
+    position: fixed;
+    /*background-color: #ffffff0d;*/
+    z-index: 1000;
+}
+.bottom-max {
+    bottom: 0px;
+    left: 40px;
+    width: calc(100% - 40px * 2);
+    height: 40px;
+}
+.top-max {
+    top: 0px;
+    left: 40px;
+    width: calc(100% - 40px * 2);
+    height: 40px;
+}
+.left-max {
+    top: 40px;
+    left: 0px;
+    height: calc(100% - 40px * 2);
+    width: 40px;
+}
+.right-max {
+    top: 40px;
+    right: 0px;
+    height: calc(100% - 40px * 2);
+    width: 40px;
+}
+.top-right-max {
+    top: 0px;
+    right: 0px;
+    height: 40px;
+    width: 40px;
+}
+.bottom-right-max {
+    bottom: 0px;
+    right: 0px;
+    height: 40px;
+    width: 40px;
+}
+.top-left-max {
+    top: 0px;
+    left: 0px;
+    height: 40px;
+    width: 40px;
+}
+.bottom-left-max {
+    bottom: 0px;
+    left: 0px;
+    height: 40px;
+    width: 40px;
+}
+
+.btns-panel {
+    position: absolute;
+    right: 11px;
+    bottom: 40px;
+    display: inline-block;
+    padding-bottom: 0.1em;
+    z-index: 10000;
+
+    opacity: 0.3;
+}
+
+.btns-panel:hover {
+    opacity: 1;
+}
+
+.btns-panel .btn:hover {
+    background-color: black;
+    color: white;
+}
+.btns-panel .btn:first-child {
+    text-align: right;
+}
+.btns-panel .btn:last-child {
+    text-align: left;
+}
+.btns-panel .btn {
+    text-align: center;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.btns-panel .btn,
+.btns-panel textarea {
+    width: 23ch;
+}
+
+.btns-panel textarea {
+    padding: 1ch;
+    border: 1px solid black;
+    
+    height: calc(1em + 2ch + 2px);
+    vertical-align: top;
+}
+
+.btns-panel .line .btn {
+    line-height: 1em;
+    padding: 1ch;
+    height: calc(1em + 2ch + 2px);
+}
+
+.placeholder {
+    position: absolute;
+    color: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+    pointer-events: none;
+    top: 0px;
+    left: 0px;
+    padding-left: 0.5ch;
+}
+
+.lib-editor {
+    position: relative;
+    height: calc(2em + 2ch);
+}
+
+.property {
+    position: relative;
+    border-top: 1px solid transparent;
+}
+.property.monoline {
+    height: calc(1em + 0.5ch * 2);
+}
+
+.property .form-select {
+    width: 100%;
+}
+
+.types-switch:hover {
+    opacity: 1;
+}
+.types-switch {
+    position: absolute;
+    bottom: 11px;
+    left: 11px;
+    z-index: 10000;
+    
+    opacity: 0.3;
+}
+
+.types-switch .types-switch-title {
+    display: inline-block;
+    width: 11ch;
+    text-align: center;
+    
+    color: rgb(33, 37, 41);
+    background-color: white;
+    border: 1px solid #ffffff0d;
+}
+.types-switch .types-switch-item.active,
+.types-switch .types-switch-item:hover {
+        color: rgb(33, 37, 41);
+        background-color: white;
+}
+.types-switch .types-switch-item {
+    display: inline-block;
+    cursor: pointer;
+    
+    border: 1px solid #ffffff0d;
+    padding-left: 0.5ch;
+    padding-right: 0.5ch;
+
+    color: white;
+    background-color: #ffffff0d;
+}
+
+.selection-area {
+    position: absolute;
+    background-color: #ff00f214;
+    border: 1em solid #ff00f2;
+}

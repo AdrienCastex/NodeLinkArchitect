@@ -1,0 +1,39 @@
+
+.side-btn {
+    margin-top: 0.35ch;
+}
+
+.side-btn .side-btn-content:hover {
+    background-color: orange;
+}
+.side-btn .side-btn-content {
+    padding: 0.5ch 1ch;
+    font-size: 1rem;
+    cursor: pointer;
+    background-color: white;
+    text-align: center;
+}
+
+.side-btn .side-btn-desc {
+    display: none;
+    
+    position: absolute;
+    white-space: nowrap;
+    right: 11.2ch;
+    background-color: white;
+    padding: 0.5ch;
+}
+
+.side-btn:hover .side-btn-desc {
+    display: inline-block;
+}
+
+.btns-panel input {
+    display: inline-block;
+    position: absolute;
+    z-index: 10000;
+    right: 0;
+    margin-top: 0.15em;
+    width: 35ch;
+    border: 0px;
+}

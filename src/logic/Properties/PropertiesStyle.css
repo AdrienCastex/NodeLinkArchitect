@@ -1,0 +1,13 @@
+
+.properties-group:not(.header) {
+    /*height: calc(100% - 1em);*/
+}
+
+.properties-group-title:hover {
+    color: black;
+    background-color: orange;
+}
+.properties-group-title {
+    padding: 0.25em;
+    cursor: pointer;
+}

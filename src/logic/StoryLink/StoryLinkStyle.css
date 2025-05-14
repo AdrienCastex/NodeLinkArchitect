@@ -1,0 +1,76 @@
+
+.graph-link {
+    display: inline-block;
+    position: absolute;
+    z-index: 1;
+
+    /*height: calc(4 * 2 * 0.5ch + 4 * 1em + 2 * 1em + 0.5ch * 4);*/
+
+    background-color: rgb(63, 120, 158);
+    color: white;
+    padding: 0.5ch;
+    border: 0.5ch solid rgb(63, 120, 158);
+    border-bottom-right-radius: 0px;
+}
+
+/*
+.graph-link.target-id {
+    height: calc(2 * 0.5ch + 1em + 0.5ch * 3);
+}*/
+.graph-link.cursor-ghost {
+    opacity: 0.3;
+    padding: 0px;
+}
+.graph-link.cursor-ghost:hover {
+    opacity: 1;
+}
+.graph-link {
+/*.graph-link:not(.target-id) {*/
+    /*margin-top: calc((4 * 2 * 0.5ch + 4 * 1em + 2 * 1em + 0.5ch * 4) / -2);*/
+}
+
+.graph-link .resize-handle:hover {
+    /*background-color: red;*/
+    background: repeating-linear-gradient( -45deg, red, red 1px, transparent 1px, transparent 3px );
+}
+.graph-link .resize-handle {
+    cursor: e-resize;
+    /*background-color: rgba(0, 0, 0, 0.5);*/
+    background: repeating-linear-gradient( -45deg, black, black 1px, transparent 1px, transparent 3px );
+}
+
+.graph-link .remove-btn + .property.monoline {
+    width: calc(100% - 2ch);
+}
+.graph-link .drag-handle + .property.monoline {
+    width: calc(100% - 4ch);
+    display: inline-block;
+}
+    
+.graph-link .drag-handle {
+    cursor: grab;
+    width: 2ch;
+    /*float: left;*/
+}
+
+.graph-link input:not([type="checkbox"]),
+.graph-link textarea {
+    width: 100%;
+
+    resize: none;
+}
+    
+.graph-link .nextId,
+.graph-link .enabled,
+.graph-link .actions,
+.graph-link .conditions,
+.graph-link .link-text {
+    height: calc(1em + 0.5ch * 2);
+    position: relative;
+    border-top: 1px solid transparent;
+}
+
+.graph-link.selected {
+    border-color: #ff00f2;
+    box-shadow: 0px 0px 10px #ff00f2;
+}

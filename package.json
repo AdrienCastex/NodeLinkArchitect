@@ -1,0 +1,36 @@
+{
+  "name": "node-link-architect",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -o ./",
+    "build": "webpack",
+    "dev": "webpack -w"
+  },
+  "author": "Adrien Castex",
+  "license": "The Unlicense",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "react-bootstrap": "^2.9.0",
+    "react-number-format": "^5.3.1",
+    "@types/react": "^18.2.23",
+    "@types/react-dom": "^18.2.8",
+    "babel-loader": "^9.1.3",
+    "css-loader": "^6.8.1",
+    "file-loader": "^6.2.0",
+    "fork-ts-checker-webpack-plugin": "^9.0.0",
+    "mini-css-extract-plugin": "^2.7.6",
+    "monaco-editor": "^0.44.0",
+    "monaco-editor-webpack-plugin": "^7.1.0",
+    "nodemon": "^2.0.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.4.4",
+    "url-loader": "^4.1.1",
+    "webp-converter": "^2.3.3",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  }
+}

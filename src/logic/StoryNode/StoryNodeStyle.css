@@ -1,0 +1,56 @@
+
+.graph-node {
+    display: inline-block;
+    position: absolute;
+    z-index: 1;
+    
+    background-color: rgb(90, 158, 63);
+    border: 0.5ch solid rgb(90, 158, 63);
+    color: white;
+    border-bottom-right-radius: 0px;
+}
+
+.graph-node .resize-handle:hover {
+    background: repeating-linear-gradient( -45deg, red, red 1px, transparent 1px, transparent 3px );
+}
+.graph-node .resize-handle {
+    cursor: nw-resize;
+    /*background-color: rgb(90, 158, 63);*/
+    background: repeating-linear-gradient( -45deg, black, black 1px, transparent 1px, transparent 3px );
+}
+
+.graph-node.selected {
+    border-color: #ff00f2;
+    box-shadow: 0px 0px 10px #ff00f2;
+}
+
+.graph-node input,
+.graph-node textarea {
+    width: 100%;
+
+    resize: none;
+}
+
+.graph-node .drag-handle + * {
+    width: calc(100% - 2ch * 2);
+    display: inline-block;
+}
+.graph-node .drag-handle {
+    cursor: grab;
+    width: 2ch;
+    float: left;
+}
+
+.graph-node .id,
+.graph-node .onEnter,
+.graph-node .onLeave,
+.graph-node .text {
+    position: relative;
+    border-top: 1px solid transparent;
+}
+
+.graph-node .id,
+.graph-node .onEnter,
+.graph-node .onLeave {
+    height: calc(1em + 0.5ch * 2);
+}
