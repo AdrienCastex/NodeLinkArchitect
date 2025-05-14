@@ -102,6 +102,8 @@
  * @property {string} lib
  * @property {StoryNode[]} nodes
  * @property {StoryLink[]} links
+ * @property {StoryNode[]} flatNodes
+ * @property {StoryLink[]} flatLinks
  */
 
 /**
