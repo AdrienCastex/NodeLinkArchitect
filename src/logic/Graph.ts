@@ -305,6 +305,7 @@ export class Graph {
     public createNode(node: GraphNode) {
         this.nodes.push(node);
         node.updateHeight();
+        node.updateWidth();
 
         if(node.typeId === '_subGraph_') {
             node.viewport = {
@@ -373,6 +374,10 @@ export abstract class GraphNodeLink {
             data._height = data.height;
             delete data.height;
         }
+        if(data.width !== undefined) {
+            data._width = data.width;
+            delete data.width;
+        }
 
         Object.assign(result, data);
         GraphNodeLink.fulfillType(result.properties, result.info, data.typeId);
@@ -433,7 +438,7 @@ export abstract class GraphNodeLink {
                 };
             }
 
-            this.width = info.defaultSize?.width ?? this.width;
+            this._width = info.defaultSize?.width ?? this._width;
             this._height = info.defaultSize?.height ?? this._height;
         }
     }
@@ -459,7 +464,14 @@ export abstract class GraphNodeLink {
 
     x: number
     y: number
-    width: number = 300
+    protected _width: number = 300
+    get width() {
+        return this._width;
+    }
+    set width(value) {
+        this._width = Math.max(value, this.minWidth);
+    }
+
     protected _height: number = 0
     get height() {
         return this._height;
@@ -470,6 +482,13 @@ export abstract class GraphNodeLink {
 
     public updateHeight() {
         this.height = this.height;
+    }
+    public updateWidth() {
+        this.width = this.width;
+    }
+
+    public get minWidth() {
+        return 100;
     }
 
     public get minHeight() {
@@ -484,7 +503,7 @@ export abstract class GraphNodeLink {
         return Object.values(this.getGroupedProperties()).reduce((p, c) => p + (c.isOpen ? c.minHeightPx : 1.5 * rem), border * 2 - 2); // -2: last two spacing pixels
     }
 
-    public get isResizable() {
+    public get isHeightResizable() {
         return this.hasMultiline;
     }
 
@@ -588,7 +607,7 @@ export abstract class GraphNodeLink {
             properties: this.properties,
             x: this.x,
             y: this.y,
-            width: this.width,
+            _width: this._width,
             _height: this._height,
         }
     }

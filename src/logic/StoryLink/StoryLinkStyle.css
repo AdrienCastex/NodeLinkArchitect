@@ -33,7 +33,6 @@
     background: repeating-linear-gradient( -45deg, red, red 1px, transparent 1px, transparent 3px );
 }
 .graph-link .resize-handle {
-    cursor: e-resize;
     /*background-color: rgba(0, 0, 0, 0.5);*/
     background: repeating-linear-gradient( -45deg, black, black 1px, transparent 1px, transparent 3px );
 }

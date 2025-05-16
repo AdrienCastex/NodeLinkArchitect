@@ -9,6 +9,8 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
 
     const viewport = Viewport.instance;
 
+    const isHeightResizable = node.isHeightResizable;
+
     const isSubGraph = node.typeId === '_subGraph_';
     const isSubGraphInputOutput = !isSubGraph && node.typeId.startsWith('_subGraph_');
 
@@ -73,7 +75,7 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
             <Properties isHeader={false} properties={node.propertiesInfo} excludeProperties={[ node.type.headerPropertyId ]} nodeLink={node} forceUpdate={props.forceUpdate} />
         </>}
 
-        {node.isResizable ? <div className="resize-handle" onMouseDown={(e) => {
+        <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
             e.stopPropagation();
 
             const initialPos = {
@@ -83,11 +85,14 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
 
             props.onDragStart((e, dragStart) => {
                 node.width = initialPos.x + (e.x - dragStart.x);
-                node.height = initialPos.y + (e.y - dragStart.y);
+
+                if(isHeightResizable) {
+                    node.height = initialPos.y + (e.y - dragStart.y);
+                }
 
                 props.forceUpdate();
             });
-        }}></div> : undefined}
+        }}></div>
     </div>
 }
 

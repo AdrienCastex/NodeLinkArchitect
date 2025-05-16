@@ -16,6 +16,8 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
 
     const width = link.type.headerPropertyId ? link.width : 25;
 
+    const isHeightResizable = link.isHeightResizable;
+
     const style: React.CSSProperties = {
         top: (!link.hasTargetNode ? link.y : (srcNode.y + srcNode.height + (targetNode?.y || 0)) / 2) + viewport.y,
         left: (!link.hasTargetNode ? link.x : (srcNode.x + srcNode.width / 2 + (targetNode?.x || 0) + (targetNode?.width || 0) / 2) / 2 - width / 2) + viewport.x,
@@ -50,19 +52,23 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
             ? <Properties isHeader={false} properties={link.propertiesInfo} excludeProperties={[ link.type.headerPropertyId ]} nodeLink={link} forceUpdate={props.forceUpdate} />
             : undefined
         }
-        {link.isResizable ? <div className="resize-handle" onMouseDown={(e) => {
+        <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
             e.stopPropagation();
 
             initialPos = {
-                y: 0,
+                y: link.height,
                 x: link.width
             };
 
             props.onDragStart((e, dragStart) => {
                 link.width = initialPos.x + (e.x - dragStart.x);
 
+                if(isHeightResizable) {
+                    link.height = initialPos.y + (e.y - dragStart.y);
+                }
+
                 props.forceUpdate();
             });
-        }}></div> : undefined}
+        }}></div>
     </div>
 }

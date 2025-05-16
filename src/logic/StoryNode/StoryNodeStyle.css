@@ -14,7 +14,6 @@
     background: repeating-linear-gradient( -45deg, red, red 1px, transparent 1px, transparent 3px );
 }
 .graph-node .resize-handle {
-    cursor: nw-resize;
     /*background-color: rgb(90, 158, 63);*/
     background: repeating-linear-gradient( -45deg, black, black 1px, transparent 1px, transparent 3px );
 }
