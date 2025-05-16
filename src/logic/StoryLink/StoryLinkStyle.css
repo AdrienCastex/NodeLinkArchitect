@@ -48,8 +48,8 @@
     
 .graph-link .drag-handle {
     cursor: grab;
-    width: 2ch;
-    /*float: left;*/
+    /*width: 2ch;
+    float: left;*/
 }
 
 .graph-link input:not([type="checkbox"]),

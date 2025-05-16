@@ -33,16 +33,16 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
             <table className="header-table">
                 <tbody>
                     <tr>
-                        <td>
-                            <div className="drag-handle" onMouseDown={(e) => {
-                                if(e.button === 0) {
-                                    e.stopPropagation();
+                        <td className="drag-handle" onMouseDown={(e) => {
+                            if(e.button === 0) {
+                                e.stopPropagation();
 
-                                    props.onDragStart(undefined);
-                                } else if(e.button === 2) {
-                                    e.stopPropagation();
-                                }
-                            }}>::</div>
+                                props.onDragStart(undefined);
+                            } else if(e.button === 2) {
+                                e.stopPropagation();
+                            }
+                        }}>
+                            <div>::</div>
                         </td>
                         <td>{node.typeId === '_subGraph_input_' ? 'Input' : 'Output'}</td>
                     </tr>
@@ -52,20 +52,20 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
             <table className="header-table">
                 <tbody>
                     <tr>
-                        <td>
-                            <div className="drag-handle" onMouseDown={(e) => {
-                                if(e.button === 0) {
-                                    e.stopPropagation();
+                        <td className="drag-handle" onMouseDown={(e) => {
+                            if(e.button === 0) {
+                                e.stopPropagation();
 
-                                    props.onDragStart(undefined);
-                                } else if(e.button === 2) {
-                                    e.stopPropagation();
-                                }
-                            }}>::</div>
+                                props.onDragStart(undefined);
+                            } else if(e.button === 2) {
+                                e.stopPropagation();
+                            }
+                        }}>
+                            <div>::</div>
                         </td>
                         <td><Properties isHeader={true} properties={{ [node.type.headerPropertyId]: node.propertiesInfo[node.type.headerPropertyId] }} nodeLink={node} forceUpdate={props.forceUpdate} /></td>
                         {isSubGraph ? <td><div className="open-subgraph-btn" onClick={() => props.openSubGraph()}>Open</div></td> : undefined}
-                        <td><div className="remove-btn" onClick={(e) => props.deleteNode(e.ctrlKey)}>x</div></td>
+                        <td className="remove-btn" onClick={(e) => props.deleteNode(e.ctrlKey)}><div>x</div></td>
                     </tr>
                 </tbody>
             </table>

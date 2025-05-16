@@ -32,17 +32,17 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
         <table className="header-table">
             <tbody>
                 <tr>
-                    {!link.hasTargetNode ? <td>
-                        <div className="drag-handle" onMouseDown={(e) => {
+                    {!link.hasTargetNode ? <td className="drag-handle" onMouseDown={(e) => {
                             if(e.button === 0) {
                                 e.stopPropagation();
 
                                 props.onDragStart(undefined);
                             }
-                        }}>::</div>
+                        }}>
+                        <div>::</div>
                     </td> : undefined}
                     <td><Properties isHeader={true} properties={{ [link.type.headerPropertyId]: link.propertiesInfo[link.type.headerPropertyId] }} nodeLink={link} forceUpdate={props.forceUpdate} /></td>
-                    <td><div className="remove-btn" onClick={(e) => props.deleteLink(e.ctrlKey)}>x</div></td>
+                    <td className="remove-btn" onClick={(e) => props.deleteLink(e.ctrlKey)}><div>x</div></td>
                 </tr>
             </tbody>
         </table>

@@ -64,15 +64,25 @@ input:not([type="checkbox"]) {
 
 .form-check {
     display: inline;
+    line-height: 1.5rem;
 }
 
+.open-subgraph-btn {
+    display: inline-block;
+}
+.remove-btn {
+    text-align: right;
+    padding: 0px 1ch !important;
+}
+.drag-handle {
+    text-align: center;
+}
 .remove-btn,
 .open-subgraph-btn,
 .drag-handle {
     /*height: calc(1em + 0.5ch * 2) !important;*/
     height: 1.5rem;
     padding-top: 0.05rem;
-    display: inline-block;
 }
 
 .open-subgraph-btn {
