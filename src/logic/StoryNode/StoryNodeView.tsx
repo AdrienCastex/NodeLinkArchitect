@@ -4,10 +4,8 @@ import "./StoryNodeStyle";
 import { Viewport } from "../Viewport";
 import { Properties } from "../Properties/Properties";
 
-export function StoryNodeView(props: { isSelected: boolean, node: GraphNode, openSubGraph(): void, deleteNode(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void, onDrawingLineStart(node: GraphNode): void, onDrawingLineEnd(node: GraphNode): void }) {
+export function StoryNodeView(props: { forceUpdate: () => void, isSelected: boolean, node: GraphNode, openSubGraph(): void, deleteNode(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void, onDrawingLineStart(node: GraphNode): void, onDrawingLineEnd(node: GraphNode): void }) {
     const node = props.node;
-    
-    const [_, forceUpdate] = useReducer((x) => x + 1, 0);
 
     const viewport = Viewport.instance;
 
@@ -65,17 +63,17 @@ export function StoryNodeView(props: { isSelected: boolean, node: GraphNode, ope
                                 }
                             }}>::</div>
                         </td>
-                        <td><Properties isHeader={true} properties={{ [node.type.headerPropertyId]: node.propertiesInfo[node.type.headerPropertyId] }} nodeLink={node} forceUpdate={forceUpdate} /></td>
+                        <td><Properties isHeader={true} properties={{ [node.type.headerPropertyId]: node.propertiesInfo[node.type.headerPropertyId] }} nodeLink={node} forceUpdate={props.forceUpdate} /></td>
                         {isSubGraph ? <td><div className="open-subgraph-btn" onClick={() => props.openSubGraph()}>Open</div></td> : undefined}
                         <td><div className="remove-btn" onClick={(e) => props.deleteNode(e.ctrlKey)}>x</div></td>
                     </tr>
                 </tbody>
             </table>
 
-            <Properties isHeader={false} properties={node.propertiesInfo} excludeProperties={[ node.type.headerPropertyId ]} nodeLink={node} forceUpdate={forceUpdate} />
+            <Properties isHeader={false} properties={node.propertiesInfo} excludeProperties={[ node.type.headerPropertyId ]} nodeLink={node} forceUpdate={props.forceUpdate} />
         </>}
 
-        <div className="resize-handle" onMouseDown={(e) => {
+        {node.isResizable ? <div className="resize-handle" onMouseDown={(e) => {
             e.stopPropagation();
 
             const initialPos = {
@@ -87,9 +85,9 @@ export function StoryNodeView(props: { isSelected: boolean, node: GraphNode, ope
                 node.width = initialPos.x + (e.x - dragStart.x);
                 node.height = initialPos.y + (e.y - dragStart.y);
 
-                forceUpdate();
+                props.forceUpdate();
             });
-        }}></div>
+        }}></div> : undefined}
     </div>
 }
 

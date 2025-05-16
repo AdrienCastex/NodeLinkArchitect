@@ -4,11 +4,10 @@ import "./StoryLinkStyle";
 import { Viewport } from "../Viewport";
 import { Properties } from "../Properties/Properties";
 
-export function StoryLinkView(props: { isSelected: boolean, nodes: GraphNode[], link: GraphLink, deleteLink(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void }) {
+export function StoryLinkView(props: { forceUpdate: () => void, isSelected: boolean, nodes: GraphNode[], link: GraphLink, deleteLink(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void }) {
     const link = props.link;
     
     let initialPos: { x: number, y: number };
-    const [_, forceUpdate] = useReducer((x) => x + 1, 0);
 
     const viewport = Viewport.instance;
 
@@ -42,16 +41,16 @@ export function StoryLinkView(props: { isSelected: boolean, nodes: GraphNode[], 
                             }
                         }}>::</div>
                     </td> : undefined}
-                    <td><Properties isHeader={true} properties={{ [link.type.headerPropertyId]: link.propertiesInfo[link.type.headerPropertyId] }} nodeLink={link} forceUpdate={forceUpdate} /></td>
+                    <td><Properties isHeader={true} properties={{ [link.type.headerPropertyId]: link.propertiesInfo[link.type.headerPropertyId] }} nodeLink={link} forceUpdate={props.forceUpdate} /></td>
                     <td><div className="remove-btn" onClick={(e) => props.deleteLink(e.ctrlKey)}>x</div></td>
                 </tr>
             </tbody>
         </table>
         {link.propertiesInfo
-            ? <Properties isHeader={false} properties={link.propertiesInfo} excludeProperties={[ link.type.headerPropertyId ]} nodeLink={link} forceUpdate={forceUpdate} />
+            ? <Properties isHeader={false} properties={link.propertiesInfo} excludeProperties={[ link.type.headerPropertyId ]} nodeLink={link} forceUpdate={props.forceUpdate} />
             : undefined
         }
-        <div className="resize-handle" onMouseDown={(e) => {
+        {link.isResizable ? <div className="resize-handle" onMouseDown={(e) => {
             e.stopPropagation();
 
             initialPos = {
@@ -62,8 +61,8 @@ export function StoryLinkView(props: { isSelected: boolean, nodes: GraphNode[], 
             props.onDragStart((e, dragStart) => {
                 link.width = initialPos.x + (e.x - dragStart.x);
 
-                forceUpdate();
+                props.forceUpdate();
             });
-        }}></div>
+        }}></div> : undefined}
     </div>
 }

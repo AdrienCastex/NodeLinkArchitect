@@ -40,12 +40,17 @@ html, body {
     height: 100%;
 }
 textarea,
+select,
 input:not([type="checkbox"]) {
-    padding: 0.5ch !important;
-    line-height: 1em !important;
+    padding: 0.25rem !important;
+    line-height: 1rem !important;
+    border: 0px !important;
+    border-radius: 0px !important;
+    /*border-bottom: 1px solid transparent !important;*/
 }
 input:not([type="checkbox"]) {
-    height: calc(1em + 0.5ch * 2) !important;
+    /*height: calc(1em + 0.5ch * 2) !important;*/
+    height: 1.5rem;
 }
 .text {
     height: calc(100% - 3em - 3 * 2 * 0.5ch);
@@ -64,8 +69,9 @@ input:not([type="checkbox"]) {
 .remove-btn,
 .open-subgraph-btn,
 .drag-handle {
-    height: calc(1em + 0.5ch * 2) !important;
-    padding-top: 0.25em;
+    /*height: calc(1em + 0.5ch * 2) !important;*/
+    height: 1.5rem;
+    padding-top: 0.05rem;
     display: inline-block;
 }
 
@@ -123,7 +129,10 @@ input:not([type="checkbox"]) {
 
 .header-table {
     width: 100%;
-    margin-bottom: 0.25em;
+}
+.header-table > tbody > tr > td {
+    padding: 0px;
+    /*padding-bottom: 0.25em;*/
 }
 .header-table > tbody > tr > td:last-child {
     text-align: right;
@@ -264,18 +273,6 @@ polyline {
 .lib-editor {
     position: relative;
     height: calc(2em + 2ch);
-}
-
-.property {
-    position: relative;
-    border-top: 1px solid transparent;
-}
-.property.monoline {
-    height: calc(1em + 0.5ch * 2);
-}
-
-.property .form-select {
-    width: 100%;
 }
 
 .types-switch:hover {

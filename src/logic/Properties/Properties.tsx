@@ -1,16 +1,27 @@
-import React, { useState } from "react";
-import { IGraphProperties, Graph } from "../Graph";
+import React, { useEffect, useState } from "react";
+import { IGraphProperties, Graph, GraphNodeLink } from "../Graph";
 import { Editor } from "../Editor";
 import { Config, ConfigOptionsPropViewType, IConfigOptionsPropsList } from "../Config";
 import { Form } from "react-bootstrap";
 import './PropertiesStyle';
 import { saveServerUrl } from "../App/AppView";
 
-export function Properties(props: { isHeader: boolean, properties: IConfigOptionsPropsList; excludeProperties?: string[]; nodeLink: { height: number, properties: IGraphProperties; guid: string, parseValue?(value: string): string }; forceUpdate: () => void; }) {
+export function Properties(props: { isHeader: boolean, properties: IConfigOptionsPropsList; excludeProperties?: string[]; nodeLink: GraphNodeLink; forceUpdate: () => void; }) {
     const nodeLink = props.nodeLink;
     const excludeProperties = props.excludeProperties ?? [];
 
     const [isOpen, setIsOpen] = useState<string[]>([]);
+
+    useEffect(() => {
+        if(isOpen.length > 0) {
+            Graph.current.openGroups[nodeLink.guid] = isOpen;
+        } else {
+            delete Graph.current.openGroups[nodeLink.guid];
+        }
+
+        nodeLink.updateHeight();
+        props.forceUpdate();
+    }, [isOpen]);
 
     const isMonoline = (propertyKey: string) => {
         const prop = props.properties[propertyKey];
@@ -31,7 +42,7 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
                 items: [],
                 nbMonolines: 0,
                 nbMultilines: 0,
-                height: 0,
+                heightPx: 0,
                 multilinesHeight: 0
             };
             p[groupKey] = group;
@@ -45,25 +56,31 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
         }
 
         return p;
-    }, {} as { [groupKey: string]: { nbMonolines: number, nbMultilines: number, items: string[], height: number, multilinesHeight: number } });
+    }, {} as { [groupKey: string]: { nbMonolines: number, nbMultilines: number, items: string[], heightPx: number, multilinesHeight: number } });
 
-    let totalHeight = nodeLink.height;
+    let totalHeightPx = nodeLink.height;
 
     const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpen.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
     const nbMonolineProperties = allPropsKeys.filter(propKey => isMonoline(propKey) && (!props.properties[propKey].group || isOpen.includes(props.properties[propKey].group))).length;
     const nbMultilineProperties = nbProperties - nbMonolineProperties;
 
-    const lineHeight = 29;
-    const heightForMultilines = totalHeight - (nbMonolineProperties + (Object.keys(grouped).length - 1)) * lineHeight;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const border = 0.4 * rem;
+
+    totalHeightPx -= border * 2;
+
+    const lineHeightPx = 1.5 * rem;
+    const heightForMultilines = totalHeightPx - (nbMonolineProperties + (Object.keys(grouped).length - 1)) * lineHeightPx;
+    const oneMultilineHeight = heightForMultilines / nbMultilineProperties;
 
     for(const groupKey in grouped) {
         const group = grouped[groupKey];
-        group.multilinesHeight = heightForMultilines / nbMultilineProperties * group.nbMultilines;
-        group.height = group.multilinesHeight + group.nbMonolines * lineHeight;
+        group.multilinesHeight = oneMultilineHeight * group.nbMultilines;
+        group.heightPx = group.multilinesHeight + group.nbMonolines * lineHeightPx;
     }
 
     return <>
-        {Object.keys(grouped).map(groupKey => <div className={"properties-group " + (props.isHeader ? 'header' : '')} key={groupKey} style={{ height: `${grouped[groupKey].height}px` }}>
+        {Object.keys(grouped).map(groupKey => <div className={"properties-group " + (props.isHeader ? 'header' : '')} key={groupKey} style={{ height: `${grouped[groupKey].heightPx}px` }}>
             {groupKey ? <div className="properties-group-title" onClick={(e) => {
                 const index = isOpen.indexOf(groupKey);
                 if(index >= 0) {
@@ -71,7 +88,7 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
                 } else {
                     isOpen.push(groupKey);
                 }
-                setIsOpen(isOpen);
+                setIsOpen([...isOpen]);
             }}>
                 {groupKey}
             </div> : undefined}
@@ -83,7 +100,7 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
                         return <Editor
                             key={key}
                             className="property"
-                            height={entry.isMonoline ? undefined : `calc(100% - 1em * ${allPropsKeys.length - 1} - ${allPropsKeys.length - 1} * 2 * 0.5ch)`}
+                            height={entry.isMonoline ? undefined : /*`calc(100% - 1em * ${allPropsKeys.length - 1} - ${allPropsKeys.length - 1} * 2 * 0.5ch)`*/ `${oneMultilineHeight}px`}
                             code={nodeLink.properties[key].value as string}
                             onChange={(value) => nodeLink.properties[key].value = (value || nodeLink.parseValue(entry.valueOnEmpty) || '')}
                             isMonoline={entry.isMonoline}

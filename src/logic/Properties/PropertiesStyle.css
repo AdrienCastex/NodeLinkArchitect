@@ -10,4 +10,23 @@
 .properties-group-title {
     padding: 0.25em;
     cursor: pointer;
+    height: 1.5rem;
+}
+
+.property {
+    height: 1.5rem;
+    position: relative;
+    /*border-top: 1px solid transparent;*/
+}
+.property.monoline {
+    /*height: calc(1em + 0.5ch * 2);*/
+}
+.property select,
+.property.monoline textarea,
+.property.monoline input {
+    height: calc(1.5rem - 2px) !important;
+}
+
+.property .form-select {
+    width: 100%;
 }

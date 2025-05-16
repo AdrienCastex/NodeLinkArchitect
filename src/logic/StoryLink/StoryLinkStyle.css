@@ -8,8 +8,7 @@
 
     background-color: rgb(63, 120, 158);
     color: white;
-    padding: 0.5ch;
-    border: 0.5ch solid rgb(63, 120, 158);
+    border: 0.4rem solid rgb(63, 120, 158);
     border-bottom-right-radius: 0px;
 }
 

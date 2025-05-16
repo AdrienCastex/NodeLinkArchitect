@@ -1,4 +1,4 @@
-import { Config, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsType, IConfigOptionsTypeEntry } from "./Config";
+import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsType, IConfigOptionsTypeEntry } from "./Config";
 import { IViewport, Viewport } from "./Viewport";
 
 export class Graph {
@@ -47,6 +47,7 @@ export class Graph {
         graph.guid = data.guid;
         graph.lib = data.lib ?? '';
         graph.viewport = data.viewport ?? graph.viewport;
+        graph.openGroups = data.openGroups ?? graph.openGroups;
         graph.currentSubGraphGUIDs = data.currentSubGraphGUIDs ?? graph.currentSubGraphGUIDs;
         graph.nodes = data.nodes.map(n => GraphNode.parse(n, data.version));
         graph.links = data.links.map(l => GraphLink.parse(l, data.version));
@@ -251,6 +252,8 @@ export class Graph {
         scale: 1
     };
 
+    openGroups: { [nodeLinkGUID: string]: string[] } = {};
+
     currentSubGraphGUIDs: string[] = [];
     
     public get flatNodes() {
@@ -301,6 +304,7 @@ export class Graph {
 
     public createNode(node: GraphNode) {
         this.nodes.push(node);
+        node.updateHeight();
 
         if(node.typeId === '_subGraph_') {
             node.viewport = {
@@ -348,6 +352,7 @@ export class Graph {
             nodes: this.nodes.map(a => a.toJSON()),
             links: this.links.map(a => a.toJSON()),
             viewport: this.viewport,
+            openGroups: this.openGroups,
             currentSubGraphGUIDs: this.currentSubGraphGUIDs,
             config: localStorage.getItem('config')
         }
@@ -364,6 +369,11 @@ export interface IGraphProperties {
 
 export abstract class GraphNodeLink {
     public static parseAndWrite<T extends GraphNodeLink>(result: T, data, version: number): T {
+        if(data.height !== undefined) {
+            data._height = data.height;
+            delete data.height;
+        }
+
         Object.assign(result, data);
         GraphNodeLink.fulfillType(result.properties, result.info, data.typeId);
         return result;
@@ -424,7 +434,7 @@ export abstract class GraphNodeLink {
             }
 
             this.width = info.defaultSize?.width ?? this.width;
-            this.height = info.defaultSize?.height ?? this.height;
+            this._height = info.defaultSize?.height ?? this._height;
         }
     }
 
@@ -450,7 +460,126 @@ export abstract class GraphNodeLink {
     x: number
     y: number
     width: number = 300
-    height: number = 300
+    protected _height: number = 0
+    get height() {
+        return this._height;
+    }
+    set height(value) {
+        this._height = Math.max(value, this.minHeight);
+    }
+
+    public updateHeight() {
+        this.height = this.height;
+    }
+
+    public get minHeight() {
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+        if(!Graph.current) {
+            return 1.5 * rem;
+        }
+
+        const border = 0.4 * rem;
+
+        return Object.values(this.getGroupedProperties()).reduce((p, c) => p + (c.isOpen ? c.minHeightPx : 1.5 * rem), border * 2 - 2); // -2: last two spacing pixels
+    }
+
+    public get isResizable() {
+        return this.hasMultiline;
+    }
+
+    public get hasMultiline() {
+        const properties = this.type.properties;
+
+        const isMonoline = (propertyKey: string) => {
+            const prop = properties[propertyKey];
+    
+            if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List) {
+                return true;
+            } else {
+                return prop.isMonoline;
+            }
+        }
+
+        for(const key in properties) {
+            if(!isMonoline(key)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public getGroupedProperties(excludeProperties: string[] = []) {
+        const properties = this.type.properties;
+
+        const isMonoline = (propertyKey: string) => {
+            const prop = properties[propertyKey];
+    
+            if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List) {
+                return true;
+            } else {
+                return prop.isMonoline;
+            }
+        }
+        
+        const isOpenList = Graph.current.openGroups[this.guid] ?? [];
+    
+        const allPropsKeys = Object.keys(properties);
+        const grouped = allPropsKeys.filter(key => !excludeProperties.includes(key)).reduce((p, c) => {
+            const groupKey = properties[c].group ?? '';
+            const isDefaultGroup = !groupKey;
+
+            let group = p[groupKey];
+            if(!group) {
+                group = {
+                    items: [],
+                    nbMonolines: !isDefaultGroup ? 1 : 0,
+                    nbMultilines: 0,
+                    heightPx: 0,
+                    multilinesHeight: 0,
+                    minHeightPx: 0,
+                    monolinesHeight: 0,
+                    isOpen: isDefaultGroup || isOpenList.includes(groupKey)
+                };
+                p[groupKey] = group;
+            }
+            group.items.push(c);
+            
+            if(isMonoline(c)) {
+                ++group.nbMonolines;
+            } else {
+                ++group.nbMultilines;
+            }
+    
+            return p;
+        }, {} as { [groupKey: string]: { nbMonolines: number, nbMultilines: number, items: string[], heightPx: number, multilinesHeight: number, monolinesHeight: number, minHeightPx: number, isOpen: boolean } });
+    
+        let totalHeightPx = this._height;
+    
+        const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpenList.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
+        const nbMonolineProperties = allPropsKeys.filter(propKey => isMonoline(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group))).length;
+        const nbMultilineProperties = nbProperties - nbMonolineProperties;
+    
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        const border = 0.4 * rem;
+    
+        totalHeightPx -= border * 2;
+    
+        const lineHeightPx = 1.5 * rem;
+        const heightForMultilines = totalHeightPx - (nbMonolineProperties + (Object.keys(grouped).length - 1)) * lineHeightPx;
+        const oneMultilineHeight = heightForMultilines / nbMultilineProperties;
+    
+        for(const groupKey in grouped) {
+            const group = grouped[groupKey];
+            group.multilinesHeight = group.nbMultilines > 0 ? oneMultilineHeight * group.nbMultilines : 0;
+            group.monolinesHeight = group.nbMonolines * lineHeightPx;
+            group.heightPx = group.multilinesHeight + group.monolinesHeight;
+            group.minHeightPx = group.nbMultilines * lineHeightPx + group.monolinesHeight;
+        }
+
+        return grouped;
+    }
     
     public toJSON() {
         return {
@@ -460,7 +589,7 @@ export abstract class GraphNodeLink {
             x: this.x,
             y: this.y,
             width: this.width,
-            height: this.height,
+            _height: this._height,
         }
     }
 }

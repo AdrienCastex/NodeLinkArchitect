@@ -448,7 +448,7 @@ export function AppView() {
                     return <LinkLine key={l.guid} point1={point1} point2={point2} />
                 })}
 
-                {graph.links.filter(l => l.getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map((l) => <StoryLinkView isSelected={selectedLinks.includes(l)} nodes={graph.nodes} key={l.guid} link={l} deleteLink={(force: boolean) => {
+                {graph.links.filter(l => l.getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map((l) => <StoryLinkView forceUpdate={forceUpdate} isSelected={selectedLinks.includes(l)} nodes={graph.nodes} key={l.guid} link={l} deleteLink={(force: boolean) => {
                     if(force || confirm("Are you sure ?")) {
                         graph.links = graph.links.filter(e => e !== l);
                         graph.saveHistory();
@@ -456,7 +456,7 @@ export function AppView() {
                     }
                 }} onDragStart={updateDragStart(l)} />)}
                 
-                {graph.nodes.filter(n => n.subGraphGUID === currentSubGraphGUIDs[0]).map((n) => <StoryNodeView isSelected={selectedNodes.includes(n)} key={n.guid} node={n} onDragStart={updateDragStart(n)} onDrawingLineStart={(node) => {
+                {graph.nodes.filter(n => n.subGraphGUID === currentSubGraphGUIDs[0]).map((n) => <StoryNodeView forceUpdate={forceUpdate} isSelected={selectedNodes.includes(n)} key={n.guid} node={n} onDragStart={updateDragStart(n)} onDrawingLineStart={(node) => {
                     drawingLine = {
                         srcNode: node,
                         x: undefined,

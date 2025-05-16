@@ -133,7 +133,7 @@ export class Config {
                 headerPropertyId: 'name',
                 defaultSize: {
                     width: 318,
-                    height: 39
+                    height: 0
                 },
                 nbOutputsMax: 1,
                 properties: {
