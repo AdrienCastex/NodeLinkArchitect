@@ -6,6 +6,31 @@ Create a configuration, then use this tool to create a graph. Finally, convert t
 
 Online version: https://adriencastex.github.io/NodeLinkArchitect/
 
+# Controls
+
+This help is visible in the console while on the GUI:
+```
+== HELP ==
+ MMB: move canvas
+ RMB on canvas: create new entry
+ RMB from entry to entry: draw choice
+ RMB from entry to canvas: draw choice + create new entry
+ CTRL: change node modes
+ CTRL + SHIFT: change link modes
+ LMB: area selection
+ LMB + SHIFT: area selection - additive
+ LMB + CTRL: area selection - exclusive
+ LMB on grip: drag entry
+ LMB + CTRL on delete btn: skip confirmation prompt
+ CTRL + c: copy selection
+ CTRL + v: paste selection
+ CTRL + d: duplicate selection
+ CTRL + SHIFT + d: duplicate selection and preserve external links
+ CTRL + z: undo
+ CTRL + y: redo
+ CTRL + SHIFT + z: redo
+```
+
 # Configuration
 
 The configuration code is JavaScript.
