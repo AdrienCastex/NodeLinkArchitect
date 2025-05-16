@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOMClient from 'react-dom/client';
-import { AppView, currentSubGraphGuid, saveServerUrl, selectedLinks, selectedNodes } from "./logic/App/AppView";
+import { AppView, currentSubGraphGuid, saveLoadServerUrl, selectedLinks, selectedNodes } from "./logic/App/AppView";
 import { Graph, GraphNode } from "./logic/Graph";
 import { Config, ConfigOptionsPropViewType, IConfigOptions } from "./logic/Config";
 import { Viewport } from "./logic/Viewport";
@@ -70,7 +70,7 @@ let root: ReactDOMClient.Root;
 				e.stopPropagation();
 				e.preventDefault();
 				
-				Graph.current.save(saveServerUrl);
+				Graph.current.save(saveLoadServerUrl);
 			} else if((selectedNodes.length > 0 || selectedLinks.length > 0) && e.key.toLowerCase() === 'delete') { // delete
 				e.stopPropagation();
 				e.preventDefault();

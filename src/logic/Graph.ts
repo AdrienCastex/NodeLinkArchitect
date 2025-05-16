@@ -150,16 +150,16 @@ export class Graph {
         }
     }
 
-    public save(saveServerUrl: string) {
+    public save(serverUrl: string) {
         const code = this.toJS();
         localStorage.setItem('code', code);
 
-        if(saveServerUrl) {
-            if(!saveServerUrl.includes('://')) {
-                saveServerUrl = `http://${saveServerUrl}`;
+        if(serverUrl) {
+            if(!serverUrl.includes('://')) {
+                serverUrl = `http://${serverUrl}`;
             }
 
-            fetch(saveServerUrl, {
+            return fetch(serverUrl, {
                 method: "POST",
                 body: JSON.stringify({
                     graph: this.toJSON(),
@@ -170,7 +170,7 @@ export class Graph {
                 }
             });
         } else {
-            navigator.clipboard.writeText(code);
+            return navigator.clipboard.writeText(code);
         }
     }
 

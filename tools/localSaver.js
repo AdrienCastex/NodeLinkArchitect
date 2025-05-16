@@ -23,6 +23,11 @@ const onData = (data) => {
 
     console.log('Write ' + data.code.length + ' chars at ' + targetFile);
 }
+const getData = () => {
+    console.log('Data requested');
+
+    return fs.readFileSync(targetFile);
+}
 
 const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -32,34 +37,41 @@ const headers = {
 };
 
 const server = http.createServer((req, res) => {
-    console.log(req.method);
-
-    if(req.method === 'OPTIONS') {
-        res.writeHead(200, headers);
-        res.end();
-        return;
-    }
-
-    let body = "";
-    req.on('readable', function() {
-        const part = req.read();
-        if(part) {
-            body += part;
+    switch(req.method.toLowerCase()) {
+        case 'options': {
+            res.writeHead(200, headers);
+            res.end();
+            break;
         }
-    });
-    req.on('end', function() {
-        /**
-         * @type {Data}
-         */
-        const data = JSON.parse(body);
+        case 'post': {
+            let body = "";
+            req.on('readable', function() {
+                const part = req.read();
+                if(part) {
+                    body += part;
+                }
+            });
+            req.on('end', function() {
+                /**
+                 * @type {Data}
+                 */
+                const data = JSON.parse(body);
 
-        res.writeHead(200, headers);
-        res.end();
+                res.writeHead(200, headers);
+                res.end();
 
-        onData(data);
-    });
+                onData(data);
+            });
+            break;
+        }
+        case 'get': {
+            res.writeHead(200, headers);
+            res.end(getData());
+            break;
+        }
+    }
 });
 
 server.listen(port);
 
-console.log('Listening on port ' + port);
+console.log('Listening: http://localhost:' + port);

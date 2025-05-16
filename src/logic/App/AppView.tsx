@@ -133,12 +133,12 @@ setInterval(() => {
 export let selectedNodes: GraphNode[] = [];
 export let selectedLinks: GraphLink[] = [];
 export let currentSubGraphGuid: string;
-export let saveServerUrl: string;
+export let saveLoadServerUrl: string;
 
 export function AppView() {
     const [currentDragging, setCurrentDragging] = useState<(e: { x: number, y: number }, dragStart: { x: number, y: number }) => void>();
     const [graph, setGraph] = useState<Graph>(Graph.current);
-    const [serverUrl, setServerUrl] = useState<string>(localStorage.getItem('saveServerUrl') || '');
+    const [serverUrl, setServerUrl] = useState<string>(localStorage.getItem('serverUrl') || '');
     const [currentSubGraphGUIDs, setCurrentSubGraphGUIDs] = useState<string[]>(Graph.current.currentSubGraphGUIDs);
     const [selectionArea, setSelectionArea] = useState<{
         x: number,
@@ -156,8 +156,8 @@ export function AppView() {
         forceUpdate();
     }, [currentSubGraphGUIDs]);
     useEffect(() => {
-        saveServerUrl = serverUrl;
-        localStorage.setItem('saveServerUrl', saveServerUrl);
+        saveLoadServerUrl = serverUrl;
+        localStorage.setItem('serverUrl', saveLoadServerUrl);
     }, [serverUrl]);
 
     //const jsonJsTextarea = useRef<HTMLTextAreaElement>();
@@ -514,7 +514,7 @@ export function AppView() {
         
         <div className="btns-panel" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
             <SideButton onClick={() => {
-                Graph.current.save(saveServerUrl);
+                Graph.current.save(saveLoadServerUrl);
                 /*
                 const code = Graph.current.toJS();
                 //jsonJsTextarea.current.value = code;
@@ -534,10 +534,22 @@ export function AppView() {
                 } else {
                     navigator.clipboard.writeText(code);
                 }*/
-            }} desc="Generate code [to clipboard / to server]">Data 🖪</SideButton>
+            }} desc="Generate code to [clipboard / server]">Data 🖪</SideButton>
             <SideButton onClick={async () => {
-                //const code = jsonJsTextarea.current.value;
-                const code = await navigator.clipboard.readText();
+                let codePromise: Promise<string>;
+
+                if(saveLoadServerUrl) {
+                    codePromise = fetch(saveLoadServerUrl, {
+                        method: "GET",
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }).then(r => r.text());
+                } else {
+                    codePromise = navigator.clipboard.readText();
+                }
+                
+                const code = await codePromise;
 
                 const configStr = localStorage.getItem('config');
 
@@ -558,7 +570,7 @@ export function AppView() {
                 if(currentSubGraphGUIDs && !Graph.current.nodes.some(n => n.guid === currentSubGraphGUIDs[0] && n.typeId === '_subGraph_')) {
                     setCurrentSubGraphGUIDs([]);
                 }
-            }} desc="Load from clipboard">Data ↺</SideButton>
+            }} desc="Load from from [clipboard / server]">Data ↺</SideButton>
             <SideButton onClick={() => {
                 const configStr = localStorage.getItem('config');
                 navigator.clipboard.writeText(configStr);
@@ -581,7 +593,7 @@ export function AppView() {
                     setGraph(() => Graph.current);
                 }
             }} desc="Load configuration from clipboard">Config ↺</SideButton>
-            <input type="text" title="Save server URL" onChange={(e) => setServerUrl(e.target.value ?? '')} value={serverUrl} placeholder="Save server URL" />
+            <input type="text" title="Save/load server URL" onChange={(e) => setServerUrl(e.target.value ?? '')} value={serverUrl} placeholder="Save/load server URL" />
             {/*
             <div className="line">
                 <div className="btn" onClick={() => {

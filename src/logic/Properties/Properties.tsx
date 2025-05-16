@@ -4,13 +4,13 @@ import { Editor } from "../Editor";
 import { Config, ConfigOptionsPropViewType, IConfigOptionsPropsList } from "../Config";
 import { Form } from "react-bootstrap";
 import './PropertiesStyle';
-import { saveServerUrl } from "../App/AppView";
+import { saveLoadServerUrl } from "../App/AppView";
 
 export function Properties(props: { isHeader: boolean, properties: IConfigOptionsPropsList; excludeProperties?: string[]; nodeLink: GraphNodeLink; forceUpdate: () => void; }) {
     const nodeLink = props.nodeLink;
     const excludeProperties = props.excludeProperties ?? [];
 
-    const [isOpen, setIsOpen] = useState<string[]>([]);
+    const [isOpen, setIsOpen] = useState<string[]>(Graph.current.openGroups[nodeLink.guid] ?? []);
 
     useEffect(() => {
         if(isOpen.length > 0) {
@@ -142,7 +142,7 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
                             }} onContextMenu={(e) => e.stopPropagation()} onBlur={() => Graph.current.saveHistory()} onKeyDown={e => {
                                 if(e.ctrlKey && e.key.toLowerCase() === 's') {
                                     e.preventDefault();
-                                    Graph.current.save(saveServerUrl);
+                                    Graph.current.save(saveLoadServerUrl);
                                 }
                             }} />
                         </div>;
