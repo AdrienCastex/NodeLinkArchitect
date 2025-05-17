@@ -547,7 +547,7 @@ export function AppView() {
                 } else {
                     navigator.clipboard.writeText(code);
                 }*/
-            }} desc="Generate code to [clipboard / server]">Data 🖪</SideButton>
+            }} desc={<>Generate code to [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data 🖪</SideButton>
             <SideButton onClick={async () => {
                 let codePromise: Promise<string>;
 
@@ -583,7 +583,7 @@ export function AppView() {
                 if(currentSubGraphGUIDs && !Graph.current.nodes.some(n => n.guid === currentSubGraphGUIDs[0] && n.typeId === '_subGraph_')) {
                     setCurrentSubGraphGUIDs([]);
                 }
-            }} desc="Load from from [clipboard / server]">Data ↺</SideButton>
+            }} desc={<>Load from [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data ↺</SideButton>
             <SideButton onClick={() => {
                 const configStr = localStorage.getItem('config');
                 navigator.clipboard.writeText(configStr);

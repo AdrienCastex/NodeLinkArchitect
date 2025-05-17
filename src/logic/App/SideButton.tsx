@@ -5,7 +5,7 @@ import { Config, ConfigOptionsPropViewType } from "../Config";
 import { Form } from "react-bootstrap";
 import './SideButtonStyle';
 
-export function SideButton(props: { desc: string, onClick: () => void, children: any }) {
+export function SideButton(props: { desc: React.ReactNode, onClick: () => void, children: any }) {
 
     return <div className="side-btn">
         <div className="side-btn-desc">{props.desc}</div>

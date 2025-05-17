@@ -341,3 +341,7 @@ polyline {
     background-color: #ff00f214;
     border: 1em solid #ff00f2;
 }
+
+.strike {
+    text-decoration: line-through;
+}
