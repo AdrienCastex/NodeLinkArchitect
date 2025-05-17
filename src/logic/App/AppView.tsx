@@ -10,7 +10,9 @@ import { SideButton } from "./SideButton";
 let dragStart: { x: number, y: number };
 let drawingLine: { x: number, y: number, srcNode: GraphNode };
 
-const LinkLine = function(props: { point1: { x: number, y: number }, point2: { x: number, y: number } }) {
+const LinkLine = function(props: { point1: { x: number, y: number }, point2: { x: number, y: number }, isSplit: boolean }) {
+    const padding = 20;
+
     const vec = {
         x: props.point1.x - props.point2.x,
         y: props.point1.y - props.point2.y
@@ -52,11 +54,16 @@ const LinkLine = function(props: { point1: { x: number, y: number }, point2: { x
     const [rnd] = useState(Math.random().toString().replace('.', ''));
     //const rnd = Math.random().toString().replace('.', '');
 
+    const colors = [
+        'green',
+        'rgb(158, 63, 100)'
+    ];
+
     const [steps, setSteps] = useState([
-        { offset: 0, color: 'green' },
-        { offset: 0.45, color: 'green' },
-        { offset: 0.55, color: 'rgb(158, 63, 100)' },
-        { offset: 1, color: 'rgb(158, 63, 100)' },
+        { offset: 0, color: colors[0] },
+        { offset: 0.45, color: colors[0] },
+        { offset: 0.55, color: colors[1] },
+        { offset: 1, color: colors[1] },
     ]);
 /*
     const progressArray = (percent) => {
@@ -91,13 +98,63 @@ const LinkLine = function(props: { point1: { x: number, y: number }, point2: { x
         return () => clearInterval(id);
     }, []);*/
 
-    return <svg style={{ left: min.x, top: min.y, width: max.x - min.x, height: max.y - min.y }}>
-        <defs>
-            <linearGradient id={"linear" + rnd} gradientTransform={`translate(0.5, 0.5) rotate(${angleDeg}) translate(-0.5, -0.5)`}>
-                {steps.map((s, i) => <stop key={i} offset={`${s.offset * 100}%`} stopColor={s.color}></stop>)}
-            </linearGradient>
-        </defs>
-        <polyline points={`${diff1.x},${diff1.y} ${diff2.x},${diff2.y}`} stroke={`url(#linear${rnd})`}></polyline>
+    const arrowAngle = 20;
+    const arrowSize = 30;
+    const nbSubTriangles = Math.max(1, Math.round(vectorLength / 800));
+    const triangleStep = {
+        x: vector.x / 2 / (nbSubTriangles + 1),
+        y: vector.y / 2 / (nbSubTriangles + 1),
+    };
+
+    const produceTriangle = (point: { x: number, y: number }, color: string) => {
+        const generator = (point: { x: number, y: number }) => ({
+            points: [point, {
+                x: point.x + Math.cos((angleDeg - arrowAngle + 180) * Math.PI / 180) * arrowSize,
+                y: point.y + Math.sin((angleDeg - arrowAngle + 180) * Math.PI / 180) * arrowSize
+            }, {
+                x: point.x + Math.cos((angleDeg + arrowAngle + 180) * Math.PI / 180) * arrowSize,
+                y: point.y + Math.sin((angleDeg + arrowAngle + 180) * Math.PI / 180) * arrowSize
+            }],
+            color: color
+        });
+        
+        const firstPosition = {
+            x: point.x - triangleStep.x * (nbSubTriangles - 1) / 2,
+            y: point.y - triangleStep.y * (nbSubTriangles - 1) / 2,
+        };
+        
+        const result = [];
+        for(let i = 0; i < nbSubTriangles; ++i) {
+            result.push(generator({
+                x: firstPosition.x + triangleStep.x * i,
+                y: firstPosition.y + triangleStep.y * i,
+            }));
+        }
+
+        return result;
+    }
+
+    const triangles = [
+        ...produceTriangle({
+            x: diff1.x + vector.x * 1 / 4,
+            y: diff1.y + vector.y * 1 / 4,
+        }, colors[0]),
+        ...produceTriangle({
+            x: diff1.x + vector.x * 3 / 4,
+            y: diff1.y + vector.y * 3 / 4,
+        }, colors[1]),
+    ];
+
+    return <svg style={{ left: min.x - padding, top: min.y - padding, width: max.x - min.x + padding * 2, height: max.y - min.y + padding * 2 }}>
+        {props.isSplit ? <>
+            <defs>
+                <linearGradient id={"linear" + rnd} gradientTransform={`translate(0.5, 0.5) rotate(${angleDeg}) translate(-0.5, -0.5)`}>
+                    {steps.map((s, i) => <stop key={i} offset={`${s.offset * 100}%`} stopColor={s.color}></stop>)}
+                </linearGradient>
+            </defs>
+            {triangles.map((e, i) => <path key={i} d={e.points.map((v, i) => `${i === 0 ? 'M' : 'L'} ${v.x + padding},${v.y + padding}`).join(' ') + ' Z'} fill={e.color}></path>)}
+        </> : undefined}
+        <polyline points={`${diff1.x + padding},${diff1.y + padding} ${diff2.x + padding},${diff2.y + padding}`} stroke={props.isSplit ? `url(#linear${rnd})` : colors[0]}></polyline>
     </svg>;
 }
 
@@ -458,7 +515,7 @@ export function AppView() {
                         point2 = { x: targetNode.x + targetNode.width / 2 + viewport.x, y: targetNode.y + viewport.y };
                     }
                     
-                    return <LinkLine key={l.guid} point1={point1} point2={point2} />
+                    return <LinkLine key={l.guid} point1={point1} point2={point2} isSplit={l.hasTargetNode} />
                 })}
 
                 {graph.links.filter(l => l.getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map((l) => <StoryLinkView forceUpdate={forceUpdate} isSelected={selectedLinks.includes(l)} nodes={graph.nodes} key={l.guid} link={l} deleteLink={(force: boolean) => {
@@ -502,7 +559,7 @@ export function AppView() {
                     }
                 }} />)}
                 {drawingLine && drawingLine.x !== undefined
-                    ? <LinkLine point1={{ x: drawingLine.srcNode.x + drawingLine.srcNode.width / 2 + viewport.x, y: drawingLine.srcNode.height + drawingLine.srcNode.y + viewport.y }} point2={{ x: drawingLine.x, y: drawingLine.y }} />
+                    ? <LinkLine point1={{ x: drawingLine.srcNode.x + drawingLine.srcNode.width / 2 + viewport.x, y: drawingLine.srcNode.height + drawingLine.srcNode.y + viewport.y }} point2={{ x: drawingLine.x, y: drawingLine.y }} isSplit={true} />
                     : undefined
                 }
             </> : undefined}
