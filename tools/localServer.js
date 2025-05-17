@@ -2,12 +2,14 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import child_process from 'child_process';
 
 const port = 1900;
 /**
  * File path where to save the code generated
  */
 const targetFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/Story/Story.tsx');
+const editorUrl = `https://adriencastex.github.io/NodeLinkArchitect/?serverUrl=http://localhost:${port}`;
 
 /**
  * @typedef {{ code: string, graph: any }} Data
@@ -75,3 +77,5 @@ const server = http.createServer((req, res) => {
 server.listen(port);
 
 console.log('Listening: http://localhost:' + port);
+console.log('Editor available at: ' + editorUrl);
+child_process.exec(`start ${editorUrl}`);

@@ -145,11 +145,11 @@ Use an IDE to exploit the JSDoc typing.
 
 Advice: copy/paste this configuration and play with it. Load, change it, load again, etc.
 
-# Save server
+# Save/load server
 
-The save server is not necessary, but you can connect it with this software to easily update your project. Just press CTRL+S (or press the button to save the data on the bottom right), and if you added a save server url (input field on the bottom right) then the graph data and the generated code will be sent to this URL.
+The save/load server is not necessary, but you can connect it with this software to easily update your project. Just press CTRL+S (or press the button to save the data on the bottom right), and if you added a save server url (input field on the bottom right) then the graph data and the generated code will be sent to this URL.
 
-An example (usable) of this save server can be found in [`tools/localSaver.js`](tools/localSaver.js). You can start it with nodejs (`node localSaver.js`).
+An example (usable) of this server can be found in [`tools/localServer.js`](tools/localServer.js). You can start it with nodejs (`node localServer.js`).
 
 # Parameters
 
