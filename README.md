@@ -150,3 +150,10 @@ Advice: copy/paste this configuration and play with it. Load, change it, load ag
 The save server is not necessary, but you can connect it with this software to easily update your project. Just press CTRL+S (or press the button to save the data on the bottom right), and if you added a save server url (input field on the bottom right) then the graph data and the generated code will be sent to this URL.
 
 An example (usable) of this save server can be found in [`tools/localSaver.js`](tools/localSaver.js). You can start it with nodejs (`node localSaver.js`).
+
+# Parameters
+
+You can pass the `serverUrl` to specify the server URL. For instance:
+```
+https://adriencastex.github.io/NodeLinkArchitect/?serverUrl=http://localhost:1900
+```

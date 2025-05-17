@@ -130,6 +130,19 @@ setInterval(() => {
     }
 }, 50);
 
+const getQueryVariable = (paramName: string, defaultValue: string = undefined): string => {
+    const query = window.location.search.substring(1);
+    const variables = query.split('&');
+    for(const variable of variables) {
+        const keyValue = variable.split('=');
+        if(keyValue[0] === paramName) {
+            return decodeURIComponent(keyValue[1]);
+        }
+    }
+
+    return defaultValue;
+}
+
 export let selectedNodes: GraphNode[] = [];
 export let selectedLinks: GraphLink[] = [];
 export let currentSubGraphGuid: string;
@@ -138,7 +151,7 @@ export let saveLoadServerUrl: string;
 export function AppView() {
     const [currentDragging, setCurrentDragging] = useState<(e: { x: number, y: number }, dragStart: { x: number, y: number }) => void>();
     const [graph, setGraph] = useState<Graph>(Graph.current);
-    const [serverUrl, setServerUrl] = useState<string>(localStorage.getItem('serverUrl') || '');
+    const [serverUrl, setServerUrl] = useState<string>(getQueryVariable('serverUrl') || localStorage.getItem('serverUrl') || '');
     const [currentSubGraphGUIDs, setCurrentSubGraphGUIDs] = useState<string[]>(Graph.current.currentSubGraphGUIDs);
     const [selectionArea, setSelectionArea] = useState<{
         x: number,
