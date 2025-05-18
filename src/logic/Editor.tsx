@@ -97,24 +97,24 @@ export function createEditor(options: ICreateEditorOptions) {
                 e.preventDefault();
             }
         });
-
-        let skipOnChange = false;
-        editor.onDidChangeModelContent((e) => {
-            if(skipOnChange) {
-                skipOnChange = false;
-                return;
-            }
-
-            const value = editor.getValue();
-            const newCode = value.substring(before.length, value.length - after.length).trim() || undefined;
-            const alteredCode = options.onChange(newCode);
-
-            if(typeof alteredCode === 'string' && alteredCode && alteredCode !== newCode) {
-                skipOnChange = true;
-                editor.setValue(alteredCode);
-            }
-        });
     }
+
+    let skipOnChange = false;
+    editor.onDidChangeModelContent((e) => {
+        if(skipOnChange) {
+            skipOnChange = false;
+            return;
+        }
+
+        const value = editor.getValue();
+        const newCode = (before || after) ? (value.substring(before.length, value.length - after.length).trim() || undefined) : value;
+        const alteredCode = options.onChange(newCode);
+
+        if(typeof alteredCode === 'string' && alteredCode && alteredCode !== newCode) {
+            skipOnChange = true;
+            editor.setValue(alteredCode);
+        }
+    });
 }
 
 

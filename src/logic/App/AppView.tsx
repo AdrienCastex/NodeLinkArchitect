@@ -756,12 +756,13 @@ export function AppView() {
                     const configGetter = eval(`() => { ${configStr} }`);
                     Config.instance = new Config(configGetter());
                     localStorage.setItem('config', configStr);
-                    setConfigStr(configStr);
                     
                     if(code) {
                         Graph.current = Graph.parse(code);
                         setGraph(() => Graph.current);
                     }
+
+                    setShowConfigEditor(false);
                 }}>Apply</button>
                 <button onClick={() => setShowConfigEditor(false)}>Close</button>
             </div>
@@ -769,7 +770,10 @@ export function AppView() {
                 <Editor
                     className="config-editor-panel-textarea"
                     code={configStr}
-                    onChange={(value) => setConfigStr(value)}
+                    onChange={(value) => {
+                        console.log(value);
+                        setConfigStr(value);
+                    }}
                     isMonoline={false}
                     placeholder={''}
                     type={''}
