@@ -16,7 +16,8 @@ export enum ConfigOptionsPropViewType {
     Editor,
     Checkbox,
     List,
-    SimpleText
+    SimpleText,
+    GUID
 }
 
 (window as any).ConfigOptionsPropViewType = ConfigOptionsPropViewType;
@@ -57,8 +58,13 @@ export interface IConfigOptionsPropSimpleText {
     viewType: ConfigOptionsPropViewType.SimpleText
     group?: string
 }
+export interface IConfigOptionsPropGUID {
+    style?: React.CSSProperties,
+    viewType: ConfigOptionsPropViewType.GUID
+    group?: string
+}
 
-export type IConfigOptionsProp = IConfigOptionsPropEditor | IConfigOptionsPropCheckbox | IConfigOptionsPropList | IConfigOptionsPropSimpleText;
+export type IConfigOptionsProp = IConfigOptionsPropEditor | IConfigOptionsPropCheckbox | IConfigOptionsPropList | IConfigOptionsPropSimpleText | IConfigOptionsPropGUID;
 
 export interface IConfigOptionsCodeWrapperCtx {
     id: string

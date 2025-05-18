@@ -15,6 +15,7 @@
  * @property {string} placeholder - The placeholder text for the editor.
  * @property {string} [codeBefore]
  * @property {string} [codeAfter]
+ * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the editor. (0: Editor, 1: Checkbox)
  */
 
@@ -22,6 +23,7 @@
  * @typedef {Object} IConfigOptionsPropCheckbox
  * @property {string} label - The label for the checkbox.
  * @property {boolean} [defaultValue] - The default value for the checkbox.
+ * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the checkbox. (1: Checkbox)
  */
 
@@ -30,6 +32,7 @@
  * @property {number} [defaultValue]
  * @property {boolean} [hasEmptyOption]
  * @property {string[]} options
+ * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the list. (2: List)
  */
 
@@ -40,11 +43,19 @@
  * @property {boolean} isMonoline - Indicates if the editor is in monoline mode.
  * @property {string} placeholder - The placeholder text for the editor.
  * @property {React.CSSProperties} [style]
+ * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the simple text. (3: SimpleText)
  */
 
 /**
- * @typedef {IConfigOptionsPropEditor | IConfigOptionsPropCheckbox | IConfigOptionsPropList | IConfigOptionsPropSimpleText} IConfigOptionsProp
+ * @typedef {Object} IConfigOptionsPropGUID
+ * @property {React.CSSProperties} [style]
+ * @property {string} group - The group of the field.
+ * @property {number} viewType - The view type for the simple text. (4: GUID)
+ */
+
+/**
+ * @typedef {IConfigOptionsPropEditor | IConfigOptionsPropCheckbox | IConfigOptionsPropList | IConfigOptionsPropSimpleText | IConfigOptionsPropGUID} IConfigOptionsProp
  */
 
 /**

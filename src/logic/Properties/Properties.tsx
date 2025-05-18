@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { IGraphProperties, Graph, GraphNodeLink } from "../Graph";
+import { Graph, GraphNodeLink } from "../Graph";
 import { Editor } from "../Editor";
-import { Config, ConfigOptionsPropViewType, IConfigOptionsPropsList } from "../Config";
+import { Config, ConfigOptionsPropViewType } from "../Config";
 import { Form } from "react-bootstrap";
 import './PropertiesStyle';
 import { saveLoadServerUrl } from "../App/AppView";
 
-export function Properties(props: { isHeader: boolean, properties: IConfigOptionsPropsList; excludeProperties?: string[]; nodeLink: GraphNodeLink; forceUpdate: () => void; }) {
+export function Properties(props: { isHeader: boolean, properties: string[]; excludeProperties?: string[]; nodeLink: GraphNodeLink; forceUpdate: () => void; }) {
     const nodeLink = props.nodeLink;
-    const excludeProperties = props.excludeProperties ?? [];
 
     const [isOpen, setIsOpen] = useState<string[]>(Graph.current.openGroups[nodeLink.guid] ?? []);
 
@@ -23,61 +22,9 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
         props.forceUpdate();
     }, [isOpen]);
 
-    const isMonoline = (propertyKey: string) => {
-        const prop = props.properties[propertyKey];
-
-        if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List) {
-            return true;
-        } else {
-            return prop.isMonoline;
-        }
-    }
-
-    const allPropsKeys = Object.keys(props.properties);
-    const grouped = allPropsKeys.filter(key => !excludeProperties.includes(key)).reduce((p, c) => {
-        const groupKey = props.properties[c].group ?? '';
-        let group = p[groupKey];
-        if(!group) {
-            group = {
-                items: [],
-                nbMonolines: 0,
-                nbMultilines: 0,
-                heightPx: 0,
-                multilinesHeight: 0
-            };
-            p[groupKey] = group;
-        }
-        group.items.push(c);
-        
-        if(isMonoline(c)) {
-            ++group.nbMonolines;
-        } else {
-            ++group.nbMultilines;
-        }
-
-        return p;
-    }, {} as { [groupKey: string]: { nbMonolines: number, nbMultilines: number, items: string[], heightPx: number, multilinesHeight: number } });
-
-    let totalHeightPx = nodeLink.height;
-
-    const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpen.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
-    const nbMonolineProperties = allPropsKeys.filter(propKey => isMonoline(propKey) && (!props.properties[propKey].group || isOpen.includes(props.properties[propKey].group))).length;
-    const nbMultilineProperties = nbProperties - nbMonolineProperties;
-
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const border = 0.4 * rem;
-
-    totalHeightPx -= border * 2;
-
-    const lineHeightPx = 1.5 * rem;
-    const heightForMultilines = totalHeightPx - (nbMonolineProperties + (Object.keys(grouped).length - 1)) * lineHeightPx;
-    const oneMultilineHeight = heightForMultilines / nbMultilineProperties;
-
-    for(const groupKey in grouped) {
-        const group = grouped[groupKey];
-        group.multilinesHeight = oneMultilineHeight * group.nbMultilines;
-        group.heightPx = group.multilinesHeight + group.nbMonolines * lineHeightPx;
-    }
+    const grouped = nodeLink.getGroupedProperties({
+        properties: props.properties
+    });
 
     return <>
         {Object.keys(grouped).map(groupKey => <div className={"properties-group " + (props.isHeader ? 'header' : '')} key={groupKey} style={{ height: `${grouped[groupKey].heightPx}px` }}>
@@ -92,15 +39,15 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
             }}>
                 {groupKey}
             </div> : undefined}
-            {!groupKey || isOpen.includes(groupKey) ? grouped[groupKey].items.map(key => {
-                const entry = props.properties[key];
+            {!groupKey || isOpen.includes(groupKey) ? grouped[groupKey].items.filter(key => nodeLink.propertiesInfo[key]).map(key => {
+                const entry = nodeLink.propertiesInfo[key];
 
                 switch (entry.viewType) {
                     case ConfigOptionsPropViewType.Editor: {
                         return <Editor
                             key={key}
                             className="property"
-                            height={entry.isMonoline ? undefined : /*`calc(100% - 1em * ${allPropsKeys.length - 1} - ${allPropsKeys.length - 1} * 2 * 0.5ch)`*/ `${oneMultilineHeight}px`}
+                            height={entry.isMonoline ? undefined : /*`calc(100% - 1em * ${allPropsKeys.length - 1} - ${allPropsKeys.length - 1} * 2 * 0.5ch)`*/ `${grouped[groupKey].multilinesHeight}px`}
                             code={nodeLink.properties[key].value as string}
                             onChange={(value) => nodeLink.properties[key].value = (value || nodeLink.parseValue(entry.valueOnEmpty) || '')}
                             isMonoline={entry.isMonoline}
@@ -134,7 +81,7 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
                     }
                     case ConfigOptionsPropViewType.SimpleText: {
                         return <div className={"property " + (entry.isMonoline ? 'monoline' : '')} key={key} style={{
-                            height: entry.isMonoline ? undefined : `${heightForMultilines / nbMultilineProperties}px`
+                            height: entry.isMonoline ? undefined : `${grouped[groupKey].multilinesHeight / grouped[groupKey].nbMultilines}px`
                         }}>
                             <Form.Control as="textarea" style={entry.style} rows={entry.isMonoline ? 1 : undefined} placeholder={entry.placeholder} value={nodeLink.properties[key].value as string} onChange={(e) => {
                                 nodeLink.properties[key].value = e.target.value || nodeLink.parseValue(entry.valueOnEmpty) || '';
@@ -145,6 +92,11 @@ export function Properties(props: { isHeader: boolean, properties: IConfigOption
                                     Graph.current.save(saveLoadServerUrl);
                                 }
                             }} />
+                        </div>;
+                    }
+                    case ConfigOptionsPropViewType.GUID: {
+                        return <div className="property monoline" key={key}>
+                            <Form.Control as="textarea" style={entry.style} rows={1} value={nodeLink.guid as string} readOnly={true} />
                         </div>;
                     }
                 }

@@ -392,9 +392,11 @@ export abstract class GraphNodeLink {
             for(const propId in commonProps) {
                 const prop = commonProps[propId];
                 
-                properties[propId] = properties[propId] ?? {
-                    value: prop.defaultValue
-                };
+                if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                    properties[propId] = properties[propId] ?? {
+                        value: prop.defaultValue
+                    };
+                }
             }
         }
 
@@ -403,9 +405,11 @@ export abstract class GraphNodeLink {
         for(const propId in info.properties) {
             const prop = info.properties[propId];
             
-            properties[propId] = properties[propId] ?? {
-                value: prop.defaultValue
-            };
+            if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                properties[propId] = properties[propId] ?? {
+                    value: prop.defaultValue
+                };
+            }
         }
     }
 
@@ -418,9 +422,11 @@ export abstract class GraphNodeLink {
                 for(const propId in commonProps) {
                     const prop = commonProps[propId];
                     
-                    this.properties[propId] = {
-                        value: typeof prop.defaultValue === 'string' ? this.parseValue(prop.defaultValue) : prop.defaultValue
-                    };
+                    if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                        this.properties[propId] = {
+                            value: typeof prop.defaultValue === 'string' ? this.parseValue(prop.defaultValue) : prop.defaultValue
+                        };
+                    }
                 }
             }
 
@@ -429,9 +435,11 @@ export abstract class GraphNodeLink {
             for(const propId in info.properties) {
                 const prop = info.properties[propId];
                 
-                this.properties[propId] = {
-                    value: typeof prop.defaultValue === 'string' ? this.parseValue(prop.defaultValue) : prop.defaultValue
-                };
+                if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                    this.properties[propId] = {
+                        value: typeof prop.defaultValue === 'string' ? this.parseValue(prop.defaultValue) : prop.defaultValue
+                    };
+                }
             }
 
             this._width = info.defaultSize?.width ?? this._width;
@@ -502,22 +510,22 @@ export abstract class GraphNodeLink {
     public get isHeightResizable() {
         return this.hasMultiline;
     }
+    
+    public isMonoline = (propertyKey: string) => {
+        const prop = this.type.properties[propertyKey];
+
+        if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List || prop.viewType === ConfigOptionsPropViewType.GUID) {
+            return true;
+        } else {
+            return prop.isMonoline;
+        }
+    }
 
     public get hasMultiline() {
         const properties = this.type.properties;
 
-        const isMonoline = (propertyKey: string) => {
-            const prop = properties[propertyKey];
-    
-            if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List) {
-                return true;
-            } else {
-                return prop.isMonoline;
-            }
-        }
-
         for(const key in properties) {
-            if(!isMonoline(key)) {
+            if(!this.isMonoline(key)) {
                 return true;
             }
         }
@@ -525,23 +533,18 @@ export abstract class GraphNodeLink {
         return false;
     }
 
-    public getGroupedProperties(excludeProperties: string[] = []) {
-        const properties = this.type.properties;
+    public getGroupedProperties(options?: {
+        properties?: string[]
+    }) {
+        options = options ?? {};
+        const propertiesToSelect = options.properties ?? Object.keys(this.type.properties);
 
-        const isMonoline = (propertyKey: string) => {
-            const prop = properties[propertyKey];
-    
-            if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List) {
-                return true;
-            } else {
-                return prop.isMonoline;
-            }
-        }
+        const properties = this.type.properties;
         
         const isOpenList = Graph.current.openGroups[this.guid] ?? [];
     
         const allPropsKeys = Object.keys(properties);
-        const grouped = allPropsKeys.filter(key => !excludeProperties.includes(key)).reduce((p, c) => {
+        const grouped = allPropsKeys.filter(key => propertiesToSelect.includes(key)).reduce((p, c) => {
             const groupKey = properties[c].group ?? '';
             const isDefaultGroup = !groupKey;
 
@@ -561,7 +564,7 @@ export abstract class GraphNodeLink {
             }
             group.items.push(c);
             
-            if(isMonoline(c)) {
+            if(this.isMonoline(c)) {
                 ++group.nbMonolines;
             } else {
                 ++group.nbMultilines;
@@ -573,7 +576,7 @@ export abstract class GraphNodeLink {
         let totalHeightPx = this._height;
     
         const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpenList.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
-        const nbMonolineProperties = allPropsKeys.filter(propKey => isMonoline(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group))).length;
+        const nbMonolineProperties = allPropsKeys.filter(propKey => this.isMonoline(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group))).length;
         const nbMultilineProperties = nbProperties - nbMonolineProperties;
     
         const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);

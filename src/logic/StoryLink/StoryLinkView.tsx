@@ -43,13 +43,13 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
                         }}>
                         <div>::</div>
                     </td> : undefined}
-                    <td><Properties isHeader={true} properties={{ [link.type.headerPropertyId]: link.propertiesInfo[link.type.headerPropertyId] }} nodeLink={link} forceUpdate={props.forceUpdate} /></td>
+                    <td><Properties isHeader={true} properties={[link.type.headerPropertyId]} nodeLink={link} forceUpdate={props.forceUpdate} /></td>
                     <td className="remove-btn" onClick={(e) => props.deleteLink(e.ctrlKey)}><div>x</div></td>
                 </tr>
             </tbody>
         </table>
         {link.propertiesInfo
-            ? <Properties isHeader={false} properties={link.propertiesInfo} excludeProperties={[ link.type.headerPropertyId ]} nodeLink={link} forceUpdate={props.forceUpdate} />
+            ? <Properties isHeader={false} properties={Object.keys(link.propertiesInfo).filter(k => k !== link.type.headerPropertyId)} nodeLink={link} forceUpdate={props.forceUpdate} />
             : undefined
         }
         <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {

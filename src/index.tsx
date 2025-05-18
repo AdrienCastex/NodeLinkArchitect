@@ -209,9 +209,7 @@ let root: ReactDOMClient.Root;
 				headerPropertyId: 'id',
 				properties: {
 					id: {
-						isMonoline: true,
-						placeholder: 'ID',
-						viewType: ConfigOptionsPropViewType.SimpleText
+						viewType: ConfigOptionsPropViewType.GUID
 					},
 					text: {
 						isMonoline: false,

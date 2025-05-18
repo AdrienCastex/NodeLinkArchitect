@@ -65,14 +65,14 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
                         }}>
                             <div>::</div>
                         </td>
-                        <td><Properties isHeader={true} properties={{ [node.type.headerPropertyId]: node.propertiesInfo[node.type.headerPropertyId] }} nodeLink={node} forceUpdate={props.forceUpdate} /></td>
+                        <td><Properties isHeader={true} properties={[node.type.headerPropertyId]} nodeLink={node} forceUpdate={props.forceUpdate} /></td>
                         {isSubGraph ? <td><div className="open-subgraph-btn" onClick={() => props.openSubGraph()}>Open</div></td> : undefined}
                         <td className="remove-btn" onClick={(e) => props.deleteNode(e.ctrlKey)}><div>x</div></td>
                     </tr>
                 </tbody>
             </table>
 
-            <Properties isHeader={false} properties={node.propertiesInfo} excludeProperties={[ node.type.headerPropertyId ]} nodeLink={node} forceUpdate={props.forceUpdate} />
+            <Properties isHeader={false} properties={Object.keys(node.propertiesInfo).filter(k => k !== node.type.headerPropertyId)} nodeLink={node} forceUpdate={props.forceUpdate} />
         </>}
 
         <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
