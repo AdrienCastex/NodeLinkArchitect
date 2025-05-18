@@ -485,14 +485,18 @@ export abstract class GraphNodeLink {
     }
 
     public updateHeight() {
-        this.height = this.height;
+        if(this.isHeightResizable) {
+            this.height = this.height;
+        } else {
+            this.height = 0;
+        }
     }
     public updateWidth() {
         this.width = this.width;
     }
 
     public get minWidth() {
-        return 100;
+        return this.type.minWidth ?? 100;
     }
 
     public get minHeight() {
@@ -537,9 +541,9 @@ export abstract class GraphNodeLink {
         properties?: string[]
     }) {
         options = options ?? {};
-        const propertiesToSelect = options.properties ?? Object.keys(this.type.properties);
-
-        const properties = this.type.properties;
+        
+        const properties = this.type.properties ?? {};
+        const propertiesToSelect = options.properties ?? Object.keys(properties);
         
         const isOpenList = Graph.current.openGroups[this.guid] ?? [];
     

@@ -79,7 +79,8 @@ export interface IConfigOptionsTypeEntry {
     defaultSize?: {
         width?: number
         height?: number
-    }
+    },
+    minWidth?: number
     nbOutputsMax?: number
     isVisible?: boolean
     style?: React.CSSProperties

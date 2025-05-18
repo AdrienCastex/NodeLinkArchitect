@@ -69,6 +69,10 @@
  * @typedef {Object} IConfigOptionsTypeEntry
  * @property {string} name
  * @property {string} [headerPropertyId]
+ * @property {{ width?: number, height?: number }} [defaultSize]
+ * @property {number} [minWidth]
+ * @property {number} [nbOutputsMax]
+ * @property {boolean} [isVisible]
  * @property {Object.<string, IConfigOptionsProp>} [properties]
  */
 

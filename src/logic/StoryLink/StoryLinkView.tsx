@@ -22,6 +22,7 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
         top: (!link.hasTargetNode ? link.y : (srcNode.y + srcNode.height + (targetNode?.y || 0)) / 2) + viewport.y,
         left: (!link.hasTargetNode ? link.x : (srcNode.x + srcNode.width / 2 + (targetNode?.x || 0) + (targetNode?.width || 0) / 2) / 2 - width / 2) + viewport.x,
         width: width,
+        height: `${link.height}px`
     };
 
     if(!link.type.headerPropertyId) {

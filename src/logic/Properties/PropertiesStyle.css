@@ -16,7 +16,7 @@
 .property {
     height: 1.5rem;
     position: relative;
-    /*border-top: 1px solid transparent;*/
+    border-top: 1px solid transparent;
 }
 .property.monoline {
     /*height: calc(1em + 0.5ch * 2);*/
