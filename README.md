@@ -33,26 +33,10 @@ This help is visible in the console while on the GUI:
 
 # Configuration
 
-The configuration code is JavaScript.
+The configuration code is JavaScript. It will be stored with the data, to keep data and the configuration together to avoid version divergence.
 
-First, import the jsdoc you can find at [`tools/jsdoc/jsdoc.js`](tools/jsdoc/jsdoc.js). Then, create your configuration and return it.
+## Example of configuration
 ```javascript
-/** @typedef {import("./jsdoc/jsdoc")} */
-
-/** @type {IConfig} */
-const config = {
-    // ...
-};
-
-return config;
-```
-
-To load the configuration in the software, it must be in your clipboard, or stored in the data (which you also need to have in your clipboard in order to load them in the software).
-
-Example of configuration:
-```javascript
-/** @typedef {import("./jsdoc/jsdoc")} */
-
 /** @type {IConfig} */
 const config = {
 	nodes: {
@@ -143,7 +127,25 @@ return config;
 
 Use an IDE to exploit the JSDoc typing.
 
-Advice: copy/paste this configuration and play with it. Load, change it, load again, etc.
+Advice: copy/paste this configuration and play with it. Apply, change it, apply again, etc.
+
+## Internal editor
+
+The GUI has its own editor to edit the configuration.
+
+## External editor
+
+First, import the jsdoc you can find at [`tools/jsdoc/jsdoc.js`](tools/jsdoc/jsdoc.js). Then, create your configuration and return it.
+```javascript
+/** @typedef {import("./jsdoc/jsdoc")} */
+
+/** @type {IConfig} */
+const config = {
+    // ...
+};
+
+return config;
+```
 
 # Save/load server
 
