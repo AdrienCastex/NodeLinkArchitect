@@ -6,6 +6,9 @@ import { Viewport } from "../Viewport";
 import { StoryLinkView } from "../StoryLink/StoryLinkView";
 import { Config } from "../Config";
 import { SideButton } from "./SideButton";
+import { Editor } from "../Editor";
+import defaultConfig from '../DefaultConfig.txt';
+import configJsdoc from '../../../tools/jsdoc/jsdoc.txt';
 
 let dragStart: { x: number, y: number };
 let drawingLine: { x: number, y: number, srcNode: GraphNode };
@@ -209,6 +212,8 @@ export function AppView() {
     const [currentDragging, setCurrentDragging] = useState<(e: { x: number, y: number }, dragStart: { x: number, y: number }) => void>();
     const [graph, setGraph] = useState<Graph>(Graph.current);
     const [serverUrl, setServerUrl] = useState<string>(getQueryVariable('serverUrl') || localStorage.getItem('serverUrl') || '');
+    const [configStr, setConfigStr] = useState<string>(localStorage.getItem('config') || defaultConfig);
+    const [showConfigEditor, setShowConfigEditor] = useState<boolean>(false);
     const [currentSubGraphGUIDs, setCurrentSubGraphGUIDs] = useState<string[]>(Graph.current.currentSubGraphGUIDs);
     const [selectionArea, setSelectionArea] = useState<{
         x: number,
@@ -229,6 +234,8 @@ export function AppView() {
         saveLoadServerUrl = serverUrl;
         localStorage.setItem('serverUrl', saveLoadServerUrl);
     }, [serverUrl]);
+    useEffect(() => {
+    }, [configStr]);
 
     //const jsonJsTextarea = useRef<HTMLTextAreaElement>();
     //const libTextarea = useRef<HTMLTextAreaElement>();
@@ -621,16 +628,17 @@ export function AppView() {
                 
                 const code = await codePromise;
 
-                const configStr = localStorage.getItem('config');
+                //const configStr = localStorage.getItem('config');
 
-                if(!configStr) {
+                //if(!configStr) {
                     const config = Graph.parseConfig(code);
                     if(config) {
                         const configGetter = eval(`() => { ${config} }`);
                         Config.instance = new Config(configGetter());
                         localStorage.setItem('config', config);
+                        setConfigStr(config);
                     }
-                }
+                //}
 
                 Graph.current = Graph.parse(code);
                 Graph.resetHistory();
@@ -641,8 +649,9 @@ export function AppView() {
                     setCurrentSubGraphGUIDs([]);
                 }
             }} desc={<>Load from [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data ↺</SideButton>
+            {/*
             <SideButton onClick={() => {
-                const configStr = localStorage.getItem('config');
+                //const configStr = localStorage.getItem('config');
                 navigator.clipboard.writeText(configStr);
             }} desc="Store current configuration to clipboard">Config 🖪</SideButton>
             <SideButton onClick={async () => {
@@ -657,12 +666,17 @@ export function AppView() {
                 const configGetter = eval(`() => { ${configStr} }`);
                 Config.instance = new Config(configGetter());
                 localStorage.setItem('config', configStr);
+                setConfigStr(configStr);
                 
                 if(code) {
                     Graph.current = Graph.parse(code);
                     setGraph(() => Graph.current);
                 }
-            }} desc="Load configuration from clipboard">Config ↺</SideButton>
+            }} desc="Load configuration from clipboard">Config ↺</SideButton>*/}
+            <SideButton onClick={async () => {
+                setShowConfigEditor(true);
+                
+            }} desc="Edit configuration">Config 🖉</SideButton>
             <input type="text" title="Save/load server URL" onChange={(e) => setServerUrl(e.target.value ?? '')} value={serverUrl} placeholder="Save/load server URL" />
             {/*
             <div className="line">
@@ -729,5 +743,51 @@ export function AppView() {
                 }}>{'>'} Load config</div>
             </div>*/}
         </div>
+
+        {showConfigEditor ? <div className="config-editor-panel-wrapper">
+            <div className="config-editor-panel-tools">
+                <button onClick={() => {
+                    let code;
+                    try {
+                        code = Graph.current.toJS();
+                    } catch(ex) {
+                    }
+
+                    const configGetter = eval(`() => { ${configStr} }`);
+                    Config.instance = new Config(configGetter());
+                    localStorage.setItem('config', configStr);
+                    setConfigStr(configStr);
+                    
+                    if(code) {
+                        Graph.current = Graph.parse(code);
+                        setGraph(() => Graph.current);
+                    }
+                }}>Apply</button>
+                <button onClick={() => setShowConfigEditor(false)}>Close</button>
+            </div>
+            <div className="config-editor-panel">
+                <Editor
+                    className="config-editor-panel-textarea"
+                    code={configStr}
+                    onChange={(value) => setConfigStr(value)}
+                    isMonoline={false}
+                    placeholder={''}
+                    type={''}
+                    fileExtension={'.js'}
+                    language={'javascript'}
+                    codeBefore={/*configJsdoc + '\n'*/''}
+                    codeAfter={''}
+                    skipConfig={true}
+                    overrideConfig={{
+                        lineNumbers: "on",
+                        //glyphMargin: true,
+                        lineDecorationsWidth: '1ch',
+                        minimap: { enabled: true },
+                        wordWrap: 'on'
+                    }}
+                    lib={configJsdoc}
+                />
+            </div>
+        </div> : undefined}
     </div>
 }

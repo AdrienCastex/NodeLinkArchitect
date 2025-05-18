@@ -345,3 +345,40 @@ polyline {
 .strike {
     text-decoration: line-through;
 }
+
+.config-editor-panel-wrapper {
+    position: absolute;
+    z-index: 100000;
+    left: 0px;
+    top: 0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 1ch;
+}
+.config-editor-panel-tools {
+    height: 1rem;
+    text-align: right;
+}
+.config-editor-panel-tools > button:hover {
+    background-color: orange;
+    color: black
+}
+.config-editor-panel-tools > button:not(:last-child) {
+    margin-right: 1ch;
+}
+.config-editor-panel-tools > button {
+    border: 0px;
+    line-height: 1rem;
+    height: 1rem;
+    padding-left: 1ch;
+    padding-right: 1ch;
+
+    background-color: #3dc9b0;
+    color: black;
+}
+.config-editor-panel-textarea {
+    width: calc(100vw - 2ch);
+    height: calc(100vh - 2ch - 1rem - 1ch);
+    margin-top: 1ch;
+}

@@ -19,5 +19,6 @@ export const monacoEditorOptionsBase: monaco.editor.IStandaloneEditorConstructio
         horizontal: "hidden",
         handleMouseWheel: false,
     },
-    contextmenu: false
+    contextmenu: false,
+    theme: 'vs-dark'
 };

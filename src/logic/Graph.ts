@@ -21,12 +21,8 @@ export class Graph {
 
             data = JSON.parse(data);
         }
-
-        if(data.config && !localStorage.getItem('config')) {
-            return data.config;
-        }
-
-        return undefined;
+        
+        return data.config;
     }
 
     public static parse(data: any) {
