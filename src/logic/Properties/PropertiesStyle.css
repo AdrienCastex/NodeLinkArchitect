@@ -30,3 +30,41 @@
 .property .form-select {
     width: 100%;
 }
+
+.monaco-editor.vs-dark .mtk1,
+.monaco-editor.vs-dark .jsx-tag-attribute-key {
+    color: #97dcff !important;
+}
+.monaco-editor.vs-dark .jsx-tag-attribute-key + .mtk9,
+.monaco-editor.vs-dark .mtk9,
+.monaco-editor.vs-dark .jsx-text {
+    color: #d4d4d4 !important;
+}
+.monaco-editor.vs-dark .jsx-tag-name {
+    color: #569CD6 !important;
+}
+.monaco-editor.vs-dark .jsx-tag-angle-bracket {
+    color: gray !important;
+}
+.monaco-editor.vs-dark .jsx-expression-braces {
+    color: #F0D610 !important;
+}
+
+.monaco-editor.vs .mtk1,
+.monaco-editor.vs .jsx-tag-attribute-key {
+    color: #095277 !important;
+}
+.monaco-editor.vs .jsx-tag-attribute-key + .mtk9,
+.monaco-editor.vs .mtk9,
+.monaco-editor.vs .jsx-text {
+    color: black !important;
+}
+.monaco-editor.vs .jsx-tag-name {
+    color: #008BFF !important;
+}
+.monaco-editor.vs .jsx-tag-angle-bracket {
+    color: gray !important;
+}
+.monaco-editor.vs .jsx-expression-braces {
+    color: #FF00EF !important;
+}

@@ -172,6 +172,8 @@ const scrollViewport = {
     viewportSpeed: 45
 };
 
+export const updateView = () => scrollViewport?.refresh();
+
 setInterval(() => {
     if(scrollViewport.x !== 0 || scrollViewport.y !== 0) {
         const speed = (window as any).settings.viewportSpeed / Viewport.instance.scale;
@@ -786,7 +788,8 @@ export function AppView() {
                         //glyphMargin: true,
                         lineDecorationsWidth: '1ch',
                         minimap: { enabled: true },
-                        wordWrap: 'on'
+                        wordWrap: 'on',
+                        theme: 'vs-dark'
                     }}
                     lib={configJsdoc}
                 />

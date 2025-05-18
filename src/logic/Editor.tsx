@@ -3,6 +3,7 @@ import * as monaco from 'monaco-editor';
 import { monacoEditorOptionsBase } from "./monacoEditorOptionsBase";
 import { Graph } from "./Graph";
 import { Config, IConfigOptionsCodeWrapperCtx } from "./Config";
+import { MonacoJsxSyntaxHighlight, getWorker } from 'monaco-jsx-syntax-highlight';
 
 export interface ICreateEditorOptions {
     type?: string
@@ -15,6 +16,7 @@ export interface ICreateEditorOptions {
     codeBefore?: string
     codeAfter?: string
     skipConfig?: boolean
+    isDarkMode?: boolean
     overrideConfig?: monaco.editor.IStandaloneEditorConstructionOptions
     lib?: string
 }
@@ -50,8 +52,18 @@ export function createEditor(options: ICreateEditorOptions) {
                 handleMouseWheel: true,
             }
         }),
+        //theme: options.isDarkMode ? 'vs-dark' : 'vs',
         ...options.overrideConfig,
     });
+
+    const controller = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
+    const { highlighter, dispose } = controller.highlighterBuilder({
+        editor: editor,
+    })
+    // init hightlight
+    highlighter();
+
+    editor.onDidDispose(() => dispose());
 
     editor.onDidFocusEditorText(() => {
         if(options.lib) {
@@ -101,6 +113,8 @@ export function createEditor(options: ICreateEditorOptions) {
 
     let skipOnChange = false;
     editor.onDidChangeModelContent((e) => {
+        highlighter();
+
         if(skipOnChange) {
             skipOnChange = false;
             return;
@@ -125,6 +139,7 @@ export function Editor(props: {
     codeBefore?: string
     codeAfter?: string
     skipConfig?: boolean
+    isDarkMode?: boolean
     overrideConfig?: monaco.editor.IStandaloneEditorConstructionOptions
     lib?: string
 } & Omit<ICreateEditorOptions, "domElement">) {

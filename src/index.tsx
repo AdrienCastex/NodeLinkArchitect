@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOMClient from 'react-dom/client';
-import { AppView, currentSubGraphGuid, saveLoadServerUrl, selectedLinks, selectedNodes } from "./logic/App/AppView";
+import { AppView, currentSubGraphGuid, saveLoadServerUrl, selectedLinks, selectedNodes, updateView } from "./logic/App/AppView";
 import { Graph, GraphNode } from "./logic/Graph";
 import { Config, ConfigOptionsPropViewType, IConfigOptions } from "./logic/Config";
 import { Viewport } from "./logic/Viewport";
@@ -66,6 +66,8 @@ let root: ReactDOMClient.Root;
 					const list = Object.keys(Config.instance.nodes.types).filter(e => Config.instance.nodes.types[e].isVisible !== false);
 					Config.instance.currentNodeModeId = list[(list.indexOf(Config.instance.currentNodeModeId) + 1) % list.length];
 				}
+
+				updateView();
 			} else if(e.ctrlKey && e.key.toLowerCase() === 's') { // save
 				e.stopPropagation();
 				e.preventDefault();
@@ -88,6 +90,8 @@ let root: ReactDOMClient.Root;
 
 					selectedNodes.splice(0);
 					selectedLinks.splice(0);
+
+					updateView();
 				}
 			} else if((selectedNodes.length > 0 || selectedLinks.length > 0) && e.ctrlKey && e.key.toLowerCase() === 'd') { // duplicate
 				e.stopPropagation();
@@ -110,6 +114,8 @@ let root: ReactDOMClient.Root;
 
 				selectedLinks.splice(0);
 				selectedLinks.push(...cloned.links);
+				
+				updateView();
 			} else if((selectedNodes.length > 0 || selectedLinks.length > 0) && e.ctrlKey && e.key.toLowerCase() === 'c') { // copy
 				const dataStr = JSON.stringify({
 					nodes: selectedNodes,
@@ -157,12 +163,16 @@ let root: ReactDOMClient.Root;
 
 						selectedLinks.splice(0);
 						selectedLinks.push(...cloned.links);
+
+						updateView();
 					}
 				}
 			} else if(e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') { // undo
 				Graph.current.undo();
+				updateView();
 			} else if(e.ctrlKey && e.key.toLowerCase() === 'y' || e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z') { // redo
 				Graph.current.redo();
+				updateView();
 			}
 		});
 			

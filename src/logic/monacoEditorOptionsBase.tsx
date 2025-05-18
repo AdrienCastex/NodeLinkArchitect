@@ -1,7 +1,10 @@
 import * as monaco from 'monaco-editor';
 
 monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-    jsx: monaco.languages.typescript.JsxEmit.React
+    //jsx: monaco.languages.typescript.JsxEmit.React,
+    jsx: monaco.languages.typescript.JsxEmit.Preserve,
+    target: monaco.languages.typescript.ScriptTarget.ES2020,
+    esModuleInterop: true,
 });
 
 export const monacoEditorOptionsBase: monaco.editor.IStandaloneEditorConstructionOptions = {

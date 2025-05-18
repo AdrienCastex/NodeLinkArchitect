@@ -15,6 +15,7 @@
  * @property {string} placeholder - The placeholder text for the editor.
  * @property {string} [codeBefore]
  * @property {string} [codeAfter]
+ * @property {boolean} [isDarkMode]
  * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the editor. (0: Editor, 1: Checkbox)
  */

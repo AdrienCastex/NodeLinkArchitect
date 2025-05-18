@@ -292,6 +292,9 @@ polyline {
     left: 0px;
     padding-left: 0.5ch;
 }
+[editorid] .placeholder {
+    color: gray;
+}
 
 .lib-editor {
     position: relative;

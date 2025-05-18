@@ -49,7 +49,10 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
                             className="property"
                             height={entry.isMonoline ? undefined : /*`calc(100% - 1em * ${allPropsKeys.length - 1} - ${allPropsKeys.length - 1} * 2 * 0.5ch)`*/ `${grouped[groupKey].multilinesHeight}px`}
                             code={nodeLink.properties[key].value as string}
-                            onChange={(value) => nodeLink.properties[key].value = (value || nodeLink.parseValue(entry.valueOnEmpty) || '')}
+                            onChange={(value) => {
+                                nodeLink.properties[key].value = (value || nodeLink.parseValue(entry.valueOnEmpty) || '');
+                                props.forceUpdate();
+                            }}
                             isMonoline={entry.isMonoline}
                             placeholder={entry.placeholder}
                             type={entry.type}

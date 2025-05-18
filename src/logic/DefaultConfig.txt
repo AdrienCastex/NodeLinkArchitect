@@ -8,14 +8,12 @@ const config = {
 				headerPropertyId: 'id', // the property to display between the grab area and the delete btn
 				properties: { // list of properties and their definition
 					id: {
-						isMonoline: true, // on one line
-						placeholder: 'ID',
-						viewType: ConfigOptionsPropViewType.SimpleText // text field (value = string)
+						viewType: ConfigOptionsPropViewType.GUID // display the GUID of the node (readonly)
 					},
 					text: {
-						isMonoline: false,
+						isMonoline: false, // not on one line
 						placeholder: 'Text',
-						viewType: ConfigOptionsPropViewType.SimpleText
+						viewType: ConfigOptionsPropViewType.SimpleText // text field (value = string)
 					}
 				}
 			},

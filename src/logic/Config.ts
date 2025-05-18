@@ -33,6 +33,7 @@ export interface IConfigOptionsPropEditor extends Partial<IConfigOptionsLang> {
     type: string,
     codeBefore?: string
     codeAfter?: string
+    isDarkMode?: boolean
     viewType: ConfigOptionsPropViewType.Editor
     group?: string
 }
