@@ -771,7 +771,6 @@ export function AppView() {
                     className="config-editor-panel-textarea"
                     code={configStr}
                     onChange={(value) => {
-                        console.log(value);
                         setConfigStr(value);
                     }}
                     isMonoline={false}
