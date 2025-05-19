@@ -59,8 +59,6 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
                                 e.stopPropagation();
 
                                 props.onDragStart(undefined);
-                            } else if(e.button === 2) {
-                                e.stopPropagation();
                             }
                         }}>
                             <div>::</div>

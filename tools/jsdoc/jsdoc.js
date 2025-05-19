@@ -105,8 +105,8 @@
 /**
  * @typedef {Object} IConfig
  * @property {(ctx: { data: string, graph: Graph }) => string} toCodeConverter - A function for converting nodes and links to code.
- * @property {(ctx: IConfigOptionsCodeWrapperCtx) => string} beforeCode - A function to be add before editor code.
- * @property {(ctx: IConfigOptionsCodeWrapperCtx) => string} afterCode - A function to be add after editor code.
+ * @property {(ctx: IConfigOptionsCodeWrapperCtx) => string} codeBefore - A function to be add before editor code.
+ * @property {(ctx: IConfigOptionsCodeWrapperCtx) => string} codeAfter - A function to be add after editor code.
  * @property {IConfigOptionsLang} defaultLang
  * @property {IConfigOptionsNodeLink} nodes - The nodes configuration.
  * @property {IConfigOptionsLink} links - The links configuration.

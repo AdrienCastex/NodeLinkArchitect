@@ -21,9 +21,9 @@ export interface ICreateEditorOptions {
     lib?: string
 }
 
-export function createEditor(options: ICreateEditorOptions) {
+export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
     if(!options.domElement) {
-        return;
+        return undefined;
     }
 
     if(!options.domElement.hasAttribute("editorId")) {
@@ -41,9 +41,11 @@ export function createEditor(options: ICreateEditorOptions) {
     const after = options.skipConfig ? (options.codeAfter ?? '') : (options.codeAfter ?? '') + Config.instance.afterCode(lineCtx);
     const code = (before ? (before + '\n') : '') + (options.code ?? '') + (after ? ('\n' + after) : '');
 
+    const model = monaco.editor.createModel(code, options.language ?? "typescript", monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`));
+
     const editor = monaco.editor.create(options.domElement, {
         ...monacoEditorOptionsBase,
-        model: monaco.editor.createModel(code, options.language ?? "typescript", monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`)),
+        model: model,
         ...(options.isMonoline ? {} : {
             wordWrap: 'bounded',
             scrollbar: {
@@ -56,14 +58,17 @@ export function createEditor(options: ICreateEditorOptions) {
         ...options.overrideConfig,
     });
 
-    const controller = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
-    const { highlighter, dispose } = controller.highlighterBuilder({
+    const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
+    const jsxHighlighter = jsxController.highlighterBuilder({
         editor: editor,
     })
-    // init hightlight
-    highlighter();
+    
+    jsxHighlighter.highlighter();
 
-    editor.onDidDispose(() => dispose());
+    editor.onDidDispose(() => {
+        model.dispose();
+        jsxHighlighter.dispose();
+    });
 
     editor.onDidFocusEditorText(() => {
         if(options.lib) {
@@ -72,21 +77,57 @@ export function createEditor(options: ICreateEditorOptions) {
             monaco.languages.typescript.javascriptDefaults.setExtraLibs([]);
         }
     });
+    
+    editor.onMouseDown(e => {
+        e.event.stopPropagation();
+    });
+    editor.onMouseUp(e => {
+        e.event.stopPropagation();
+    });
 
     if(before || after) {
-        const createRanges = (code: string) => {
-            const lastLine = code.split('\n').length;
-            const endLine = lastLine - after.split('\n').length + 1;
+        const nbBeforeLines = before ? before.split('\n').length : 0;
+        const nbAfterLines = after ? after.split('\n').length : 0;
+        const getEndLinesData = (codeLines: string[]) => {
+            const lastLine = codeLines.length;
+            const endLine = lastLine - nbAfterLines + 1;
+
+            return {
+                lastLine,
+                endLine
+            }
+        };
+
+        const createRanges = (codeLines: string[]) => {
+            const endLineData = getEndLinesData(codeLines);
         
             return [
-                before ? new monaco.Range(1, 0, before.split('\n').length, 100) : undefined,
-                after ? new monaco.Range(endLine, 0, lastLine, 100) : undefined,
+                before ? new monaco.Range(1, 0, nbBeforeLines, 100) : undefined,
+                after ? new monaco.Range(endLineData.endLine, 0, endLineData.lastLine, 100) : undefined,
             ].filter(e => e);
         }
-        ((editor as any).setHiddenAreas as (ranges: monaco.IRange[], source?: unknown) => void)(createRanges(code));
+        ((editor as any).setHiddenAreas as (ranges: monaco.IRange[], source?: unknown) => void)(createRanges(code.split('\n')));
         
         editor.onKeyDown(e => {
-            const hiddenRanges = createRanges(editor.getValue());
+            const code = editor.getValue();
+            const codeLines = code.split('\n');
+            const hiddenRanges = createRanges(codeLines);
+            const endLineData = getEndLinesData(codeLines);
+
+            const newSelections = editor
+                .getSelections()
+                .map(r => {
+                    const newSelection = new monaco.Selection(
+                        Math.min(Math.max(r.selectionStartLineNumber, nbBeforeLines + 1), endLineData.endLine - 1),
+                        r.selectionStartLineNumber < nbBeforeLines + 1 ? 0 : r.selectionStartColumn,
+                        Math.min(Math.max(r.positionLineNumber, nbBeforeLines + 1), endLineData.endLine - 1),
+                        r.positionLineNumber > endLineData.endLine - 1 ? codeLines[codeLines.length - nbAfterLines - 1].length + 1 : r.positionColumn
+                    );
+
+                    return newSelection;
+                });
+
+            editor.setSelections(newSelections);
 
             const exitBoundaries = editor
                 .getSelections()
@@ -113,7 +154,7 @@ export function createEditor(options: ICreateEditorOptions) {
 
     let skipOnChange = false;
     editor.onDidChangeModelContent((e) => {
-        highlighter();
+        jsxHighlighter.highlighter();
 
         if(skipOnChange) {
             skipOnChange = false;
@@ -129,6 +170,8 @@ export function createEditor(options: ICreateEditorOptions) {
             editor.setValue(alteredCode);
         }
     });
+
+    return editor;
 }
 
 
@@ -144,12 +187,39 @@ export function Editor(props: {
     lib?: string
 } & Omit<ICreateEditorOptions, "domElement">) {
     const ref = useRef<HTMLDivElement>();
+    const editor = useRef<monaco.editor.IStandaloneCodeEditor>(undefined);
 
     useEffect(() => {
-        createEditor({
+        if(editor.current) {
+            const viewState = editor.current.saveViewState();
+
+            editor.current.dispose();
+            editor.current = createEditor({
+                ...props,
+                domElement: ref.current
+            });
+
+            editor.current.restoreViewState(viewState);
+        }
+    }, [Config.instance]);
+
+    useEffect(() => {
+        if(editor.current) {
+            editor.current.dispose();
+            editor.current = undefined;
+        }
+
+        editor.current = createEditor({
             ...props,
             domElement: ref.current
         });
+
+        return () => {
+            if(editor.current) {
+                editor.current.dispose();
+                editor.current = undefined;
+            }
+        }
     }, []);
 
     return <div className={`${props.className ?? ''} ${props.isMonoline ? 'monoline' : ''}`} style={props.height ? {
