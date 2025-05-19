@@ -150,7 +150,7 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     }
 
     let skipOnChange = false;
-    editor.onDidChangeModelContent((e) => {
+    editor.onDidChangeModelContent(() => {
         jsxHighlighter.highlighter();
 
         if(skipOnChange) {

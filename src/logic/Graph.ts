@@ -1,5 +1,5 @@
-import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsPropSimpleText, IConfigOptionsType, IConfigOptionsTypeEntry } from "./Config";
-import { IViewport, Viewport } from "./Viewport";
+import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsTypeEntry } from "./Config";
+import { IViewport } from "./Viewport";
 
 export class Graph {
     public static current: Graph;
@@ -389,6 +389,7 @@ export interface IGraphProperties {
 }
 
 export abstract class GraphNodeLink {
+    // eslint-disable-next-line no-unused-vars
     public static parseAndWrite<T extends GraphNodeLink>(result: T, data, version: number): T {
         if(data.height !== undefined) {
             data._height = data.height;
@@ -510,12 +511,14 @@ export abstract class GraphNodeLink {
 
     public updateHeight() {
         if(this.isHeightResizable) {
+            // eslint-disable-next-line no-self-assign
             this.height = this.height;
         } else {
             this.height = 0;
         }
     }
     public updateWidth() {
+        // eslint-disable-next-line no-self-assign
         this.width = this.width;
     }
 

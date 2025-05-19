@@ -182,9 +182,11 @@ let root: ReactDOMClient.Root;
 		const previousConfig = localStorage.getItem('config');
 		if(previousConfig) {
 			try {
+				// eslint-disable-next-line no-eval
 				const configGetter = eval(`() => { ${previousConfig} }`);
 				Config.instance = new Config(configGetter());
-			} catch(ex) {
+			} // eslint-disable-next-line no-unused-vars
+			catch(ex) {
 			}
 		}
 
@@ -195,6 +197,7 @@ let root: ReactDOMClient.Root;
 				Graph.current = Graph.parse(previousCode);
 				Graph.resetHistory();
 			}
+		// eslint-disable-next-line no-unused-vars
 		} catch(ex) {
 		} finally {
 			if(!Graph.current) {

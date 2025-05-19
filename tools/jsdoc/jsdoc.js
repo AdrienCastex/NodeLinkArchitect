@@ -1,3 +1,4 @@
+// eslint-disable no-empty-file
 
 /**
  * @typedef {Object} IConfigOptionsLang

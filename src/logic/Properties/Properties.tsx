@@ -31,7 +31,7 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
 
     return <>
         {Object.keys(grouped).filter(groupKey => grouped[groupKey].items.length > 0).map(groupKey => <div className={"properties-group " + (props.isHeader ? 'header' : '')} key={groupKey} style={{ height: `${grouped[groupKey].heightPx}px` }}>
-            {groupKey ? <div className="properties-group-title" onClick={(e) => {
+            {groupKey ? <div className="properties-group-title" onClick={() => {
                 const index = isOpen.indexOf(groupKey);
                 if(index >= 0) {
                     isOpen.splice(index, 1);

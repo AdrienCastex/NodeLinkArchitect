@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useRef, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import { Graph, GraphLink, GraphNode } from "../Graph";
 import { StoryNodeView } from "../StoryNode/StoryNodeView";
 import "./AppStyle";
@@ -62,44 +62,12 @@ const LinkLine = function(props: { point1: { x: number, y: number }, point2: { x
         'rgb(158, 63, 100)'
     ];
 
-    const [steps, setSteps] = useState([
+    const steps = [
         { offset: 0, color: colors[0] },
         { offset: 0.45, color: colors[0] },
         { offset: 0.55, color: colors[1] },
         { offset: 1, color: colors[1] },
-    ]);
-/*
-    const progressArray = (percent) => {
-        const color1 = 'black';
-        const color2 = 'red';
-
-        const result = [
-            { offset: (percent + 0.15) % 1, color: color2 },
-            { offset: (percent + 0.25) % 1, color: color1 },
-            { offset: (percent + 0.45) % 1, color: color1 },
-            { offset: (percent + 0.55) % 1, color: color2 },
-            { offset: (percent + 0.85) % 1, color: color1 },
-            { offset: (percent + 0.95) % 1, color: color2 },
-        ];
-
-        result.sort((a, b) => a.offset - b.offset);
-
-        result.splice(0, 0, { offset: 0, color: result[result.length - 1].color });
-        result.push({ offset: 1, color: result[0].color });
-
-        return result;
-    }
-
-    useEffect(() => {
-        let inc = 0;
-
-        const id = setInterval(() => {
-            inc += 0.1;
-            setSteps(progressArray(inc));
-        }, 100);
-
-        return () => clearInterval(id);
-    }, []);*/
+    ];
 
     const arrowAngle = 20;
     const arrowSize = 30;
@@ -224,6 +192,48 @@ export function AppView() {
         h: number
     }>(undefined);
     const [_, forceUpdate] = useReducer((x) => x + 1, 0);
+
+    const loadData = async () => {
+        let codePromise: Promise<string>;
+
+        if(saveLoadServerUrl) {
+            codePromise = fetch(saveLoadServerUrl, {
+                method: "GET",
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(r => r.text());
+        } else {
+            codePromise = navigator.clipboard.readText();
+        }
+        
+        const code = await codePromise;
+
+        //const configStr = localStorage.getItem('config');
+
+        //if(!configStr) {
+            const config = Graph.parseConfig(code);
+            if(config) {
+                // eslint-disable-next-line no-eval
+                const configGetter = eval(`() => { ${config} }`);
+                Config.instance = new Config(configGetter());
+                localStorage.setItem('config', config);
+                setConfigStr(config);
+            }
+        //}
+
+        Graph.current = Graph.parse(code);
+        Graph.resetHistory();
+        setGraph(() => Graph.current);
+        localStorage.setItem('code', code);
+        
+        setCurrentSubGraphGUIDs(Graph.current.currentSubGraphGUIDs);
+
+        /*
+        if(currentSubGraphGUIDs && !Graph.current.nodes.some(n => n.guid === currentSubGraphGUIDs[0] && n.typeId === '_subGraph_')) {
+            setCurrentSubGraphGUIDs([]);
+        }*/
+    }
     
     const viewport = Viewport.instance;
 
@@ -246,6 +256,10 @@ export function AppView() {
         scrollViewport.refresh = () => forceUpdate();
 
         setTimeout(forceUpdate, 0);
+
+        if(serverUrl) {
+            loadData();
+        }
     }, []);
 
     useEffect(() => {
@@ -380,7 +394,7 @@ export function AppView() {
 
             setSelectionArea(undefined);
 
-            setCurrentDragging(() => (e, dragStart) => {
+            setCurrentDragging(() => (e) => {
                 let area = {
                     x: initialPos.x,
                     y: initialPos.y,
@@ -662,41 +676,7 @@ export function AppView() {
                 }*/
             }} desc={<>Generate code to [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data 🖪</SideButton>
             <SideButton onClick={async () => {
-                let codePromise: Promise<string>;
-
-                if(saveLoadServerUrl) {
-                    codePromise = fetch(saveLoadServerUrl, {
-                        method: "GET",
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    }).then(r => r.text());
-                } else {
-                    codePromise = navigator.clipboard.readText();
-                }
-                
-                const code = await codePromise;
-
-                //const configStr = localStorage.getItem('config');
-
-                //if(!configStr) {
-                    const config = Graph.parseConfig(code);
-                    if(config) {
-                        const configGetter = eval(`() => { ${config} }`);
-                        Config.instance = new Config(configGetter());
-                        localStorage.setItem('config', config);
-                        setConfigStr(config);
-                    }
-                //}
-
-                Graph.current = Graph.parse(code);
-                Graph.resetHistory();
-                setGraph(() => Graph.current);
-                localStorage.setItem('code', code);
-
-                if(currentSubGraphGUIDs && !Graph.current.nodes.some(n => n.guid === currentSubGraphGUIDs[0] && n.typeId === '_subGraph_')) {
-                    setCurrentSubGraphGUIDs([]);
-                }
+                loadData();
             }} desc={<>Load from [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data ↺</SideButton>
             {/*
             <SideButton onClick={() => {
@@ -799,9 +779,11 @@ export function AppView() {
                     let code;
                     try {
                         code = Graph.current.toJS();
-                    } catch(ex) {
+                    } // eslint-disable-next-line no-unused-vars
+                    catch(ex) {
                     }
 
+                    // eslint-disable-next-line no-eval
                     const configGetter = eval(`() => { ${configStr} }`);
                     Config.instance = new Config(configGetter());
                     localStorage.setItem('config', configStr);

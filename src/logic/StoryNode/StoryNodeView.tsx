@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import React from "react";
 import { Graph, GraphNode } from "../Graph";
 import "./StoryNodeStyle";
 import { Viewport } from "../Viewport";
