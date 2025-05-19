@@ -174,7 +174,6 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     return editor;
 }
 
-
 export function Editor(props: {
     className?: string
     placeholder: string

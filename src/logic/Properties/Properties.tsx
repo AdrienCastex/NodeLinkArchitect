@@ -25,6 +25,9 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
     const grouped = nodeLink.getGroupedProperties({
         properties: props.properties
     });
+    
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const lineHeightPx = 1.5 * rem;
 
     return <>
         {Object.keys(grouped).map(groupKey => <div className={"properties-group " + (props.isHeader ? 'header' : '')} key={groupKey} style={{ height: `${grouped[groupKey].heightPx}px` }}>
@@ -47,7 +50,7 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
                         return <Editor
                             key={key}
                             className="property"
-                            height={entry.isMonoline ? undefined : /*`calc(100% - 1em * ${allPropsKeys.length - 1} - ${allPropsKeys.length - 1} * 2 * 0.5ch)`*/ `${grouped[groupKey].multilinesHeight}px`}
+                            height={entry.isMonoline ? undefined : `${entry.nbLines ? entry.nbLines * lineHeightPx : grouped[groupKey].singleAutoLineHeight}px`}
                             code={nodeLink.properties[key].value as string}
                             onChange={(value) => {
                                 nodeLink.properties[key].value = (value || nodeLink.parseValue(entry.valueOnEmpty) || '');
@@ -84,7 +87,7 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
                     }
                     case ConfigOptionsPropViewType.SimpleText: {
                         return <div className={"property " + (entry.isMonoline ? 'monoline' : '')} key={key} style={{
-                            height: entry.isMonoline ? undefined : `${grouped[groupKey].multilinesHeight / grouped[groupKey].nbMultilines}px`
+                            height: entry.isMonoline ? undefined : `${entry.nbLines ? entry.nbLines * lineHeightPx : grouped[groupKey].singleAutoLineHeight}px`
                         }}>
                             <Form.Control as="textarea" style={entry.style} rows={entry.isMonoline ? 1 : undefined} placeholder={entry.placeholder} value={nodeLink.properties[key].value as string} onChange={(e) => {
                                 nodeLink.properties[key].value = e.target.value || nodeLink.parseValue(entry.valueOnEmpty) || '';

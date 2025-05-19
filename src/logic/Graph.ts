@@ -1,4 +1,4 @@
-import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsType, IConfigOptionsTypeEntry } from "./Config";
+import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsPropSimpleText, IConfigOptionsType, IConfigOptionsTypeEntry } from "./Config";
 import { IViewport, Viewport } from "./Viewport";
 
 export class Graph {
@@ -512,24 +512,24 @@ export abstract class GraphNodeLink {
     }
 
     public get isHeightResizable() {
-        return this.hasMultiline;
+        return this.hasAutoLine;
     }
     
-    public isMonoline = (propertyKey: string) => {
+    public isPropertyHeightFixed = (propertyKey: string) => {
         const prop = this.type.properties[propertyKey];
 
         if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List || prop.viewType === ConfigOptionsPropViewType.GUID) {
             return true;
         } else {
-            return prop.isMonoline;
+            return prop.isMonoline || prop.nbLines !== undefined;
         }
     }
 
-    public get hasMultiline() {
+    public get hasAutoLine() {
         const properties = this.type.properties;
 
         for(const key in properties) {
-            if(!this.isMonoline(key)) {
+            if(!this.isPropertyHeightFixed(key)) {
                 return true;
             }
         }
@@ -549,55 +549,87 @@ export abstract class GraphNodeLink {
     
         const allPropsKeys = Object.keys(properties);
         const grouped = allPropsKeys.filter(key => propertiesToSelect.includes(key)).reduce((p, c) => {
-            const groupKey = properties[c].group ?? '';
+            const prop = properties[c];
+            const groupKey = prop.group ?? '';
             const isDefaultGroup = !groupKey;
 
             let group = p[groupKey];
             if(!group) {
                 group = {
                     items: [],
-                    nbMonolines: !isDefaultGroup ? 1 : 0,
-                    nbMultilines: 0,
+                    itemsNbLines: [],
+                    totalFixedNbLines: !isDefaultGroup ? 1 : 0,
+                    singleAutoLineHeight: 0,
+                    nbFixedHeight: !isDefaultGroup ? 1 : 0,
+                    nbAutoLines: 0,
                     heightPx: 0,
-                    multilinesHeight: 0,
+                    totalAutoHeight: 0,
                     minHeightPx: 0,
-                    monolinesHeight: 0,
+                    totalFixedHeight: 0,
                     isOpen: isDefaultGroup || isOpenList.includes(groupKey)
                 };
                 p[groupKey] = group;
             }
             group.items.push(c);
             
-            if(this.isMonoline(c)) {
-                ++group.nbMonolines;
-            } else {
-                ++group.nbMultilines;
+            let nbLines: number = undefined;
+
+            switch(prop.viewType) {
+                case ConfigOptionsPropViewType.GUID:
+                case ConfigOptionsPropViewType.List:
+                case ConfigOptionsPropViewType.Checkbox: {
+                    nbLines = 1;
+                    break;
+                }
+
+                default: {
+                    if(prop.isMonoline) {
+                        nbLines = 1;
+                    } else if(prop.nbLines) {
+                        nbLines = prop.nbLines;
+                    }
+                    break;
+                }
             }
+
+            if(nbLines) {
+                ++group.nbFixedHeight;
+                group.totalFixedNbLines += nbLines;
+            } else {
+                ++group.nbAutoLines;
+            }
+            
+            group.itemsNbLines.push(nbLines);
     
             return p;
-        }, {} as { [groupKey: string]: { nbMonolines: number, nbMultilines: number, items: string[], heightPx: number, multilinesHeight: number, monolinesHeight: number, minHeightPx: number, isOpen: boolean } });
+        }, {} as { [groupKey: string]: { singleAutoLineHeight: number, nbFixedHeight: number, nbAutoLines: number, totalFixedNbLines: number, items: string[], itemsNbLines: (number | undefined)[], heightPx: number, totalAutoHeight: number, totalFixedHeight: number, minHeightPx: number, isOpen: boolean } });
     
-        let totalHeightPx = this._height;
-    
-        const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpenList.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
-        const nbMonolineProperties = allPropsKeys.filter(propKey => this.isMonoline(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group))).length;
-        const nbMultilineProperties = nbProperties - nbMonolineProperties;
+        //const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpenList.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
+        //const fixedHeightProperties = allPropsKeys.filter(propKey => this.isPropertyHeightFixed(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group)));
+        //const nbFixedHeightProperties = fixedHeightProperties.length;
+        //const nbCustomlineProperties = allPropsKeys.filter(propKey => this.isPropertyHeightFixed(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group))).length;
+        //const nbAutolinesProperties = nbProperties - nbFixedHeightProperties;
+        const nbAutolinesProperties = Object.values(grouped)
+            .filter(g => g.isOpen)
+            .reduce((p, c) => p + c.nbAutoLines, 0);
     
         const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
         const border = 0.4 * rem;
     
-        totalHeightPx -= border * 2;
+        const totalHeightPx = this._height - border * 2;
     
         const lineHeightPx = 1.5 * rem;
-        const heightForMultilines = totalHeightPx - (nbMonolineProperties + (Object.keys(grouped).length - 1)) * lineHeightPx;
-        const oneMultilineHeight = heightForMultilines / nbMultilineProperties;
+        const totalFixedHeight = (Object.values(grouped).reduce((p, c) => p + (c.isOpen ? c.totalFixedNbLines : 1), 0) + (Object.keys(grouped).length - 1)) * lineHeightPx;
+        const heightForAutolines = totalHeightPx - totalFixedHeight;
+        const oneMultilineHeight = heightForAutolines / nbAutolinesProperties;
     
         for(const groupKey in grouped) {
             const group = grouped[groupKey];
-            group.multilinesHeight = group.nbMultilines > 0 ? oneMultilineHeight * group.nbMultilines : 0;
-            group.monolinesHeight = group.nbMonolines * lineHeightPx;
-            group.heightPx = group.multilinesHeight + group.monolinesHeight;
-            group.minHeightPx = group.nbMultilines * lineHeightPx + group.monolinesHeight;
+            group.totalAutoHeight = group.nbAutoLines > 0 ? oneMultilineHeight * group.nbAutoLines : 0;
+            group.totalFixedHeight = group.totalFixedNbLines * lineHeightPx;
+            group.heightPx = group.totalAutoHeight + group.totalFixedHeight;
+            group.minHeightPx = group.nbAutoLines * lineHeightPx + group.totalFixedHeight;
+            group.singleAutoLineHeight = oneMultilineHeight;
         }
 
         return grouped;

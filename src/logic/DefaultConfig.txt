@@ -74,10 +74,17 @@ const config = {
     // for code editor in the GUI (properties); if you don't use editor properties, then this is not used
 	defaultLang: {
         language: 'typescript',
-        ext: '.tsx',
+        ext: 'tsx',
 	},
-	afterCode: () => '', // code to add before editor fields
-	beforeCode: () => '', // code to add after editor fields
+    beforeCode: (ctx) => `
+        import React from "react";
+        
+        ${specialBehaviours.map(sb => `const ${sb.id}: any = ${sb.code};`).join('\n')}
+
+        ${ctx.lib};
+        function __${ctx.id}__(): ${ctx.returnType ?? ''} {
+            return (`, // code to add before editor fields
+    afterCode: (ctx) => `);}`, // code to add after editor fields
 }
 
 return config;

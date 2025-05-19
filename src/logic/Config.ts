@@ -33,6 +33,7 @@ export interface IConfigOptionsPropEditor extends Partial<IConfigOptionsLang> {
     type: string,
     codeBefore?: string
     codeAfter?: string
+    nbLines?: number
     isDarkMode?: boolean
     viewType: ConfigOptionsPropViewType.Editor
     group?: string
@@ -56,6 +57,7 @@ export interface IConfigOptionsPropSimpleText {
     isMonoline: boolean,
     style?: React.CSSProperties,
     placeholder: string,
+    nbLines?: number
     viewType: ConfigOptionsPropViewType.SimpleText
     group?: string
 }

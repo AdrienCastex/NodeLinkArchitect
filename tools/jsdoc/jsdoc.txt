@@ -2,20 +2,23 @@
 /**
  * @typedef {Object} IConfigOptionsLang
  * @property {string} language - 'typescript', 'csharp'
- * @property {string} ext - '.tsx', '.cs'
+ * @property {string} ext - 'tsx', 'cs'
  * @see https://microsoft.github.io/monaco-editor/
  */
   
 /**
  * @typedef {Object} IConfigOptionsPropEditor
- * @extends {Partial<IConfigOptionsLang>}
+ * 
+ * @property {string} [language] - 'typescript', 'csharp'
+ * @property {string} [ext] - 'tsx', 'cs'
+ * 
  * @property {string} [defaultValue] - The default value for the editor.
  * @property {string} [valueOnEmpty] - Value set instead of an empty string value when changed in the editor.
  * @property {boolean} isMonoline - Indicates if the editor is in monoline mode.
  * @property {string} placeholder - The placeholder text for the editor.
  * @property {string} [codeBefore]
  * @property {string} [codeAfter]
- * @property {boolean} [isDarkMode]
+ * @property {number} [nbLines]
  * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the editor. (0: Editor, 1: Checkbox)
  */
@@ -44,6 +47,7 @@
  * @property {boolean} isMonoline - Indicates if the editor is in monoline mode.
  * @property {string} placeholder - The placeholder text for the editor.
  * @property {React.CSSProperties} [style]
+ * @property {number} [nbLines]
  * @property {string} group - The group of the field.
  * @property {number} viewType - The view type for the simple text. (3: SimpleText)
  */
