@@ -80,6 +80,7 @@
  * @property {number} [nbOutputsMax]
  * @property {boolean} [isVisible]
  * @property {Object.<string, IConfigOptionsProp>} [properties]
+ * @property {boolean} [resizable]
  */
 
 /**

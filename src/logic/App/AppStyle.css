@@ -385,3 +385,12 @@ polyline {
     height: calc(100vh - 2ch - 1rem - 1ch);
     margin-top: 1ch;
 }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.spinning {
+    animation: spin 2s linear infinite;
+    display: inline-block;
+}

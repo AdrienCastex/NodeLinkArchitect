@@ -1,5 +1,6 @@
 import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfigOptionsNodeLink, IConfigOptionsTypeEntry } from "./Config";
 import { IViewport } from "./Viewport";
+import { compress, decompress, trimUndefinedRecursively } from 'compress-json'
 
 export class Graph {
     public static current: Graph;
@@ -9,7 +10,7 @@ export class Graph {
     ]
     protected static currentVersion = 1;
 
-    public static parseConfig(data: any) {
+    protected static extractDataObject(data: any): any {
         if(typeof data === 'string') {
             for(const keyEntry of Graph.keys) {
                 if(data.includes(keyEntry.start)) {
@@ -21,22 +22,22 @@ export class Graph {
 
             data = JSON.parse(data);
         }
+
+        if(Array.isArray(data)) {
+            data = decompress(data as any);
+        }
+
+        return data;
+    }
+
+    public static parseConfig(data: any) {
+        data = this.extractDataObject(data);
         
         return data.config;
     }
 
     public static parse(data: any) {
-        if(typeof data === 'string') {
-            for(const keyEntry of Graph.keys) {
-                if(data.includes(keyEntry.start)) {
-                    data = data.substring(data.indexOf(keyEntry.start) + keyEntry.start.length);
-                    data = data.substring(0, data.indexOf(keyEntry.end));
-                    break;
-                }
-            }
-
-            data = JSON.parse(data);
-        }
+        data = this.extractDataObject(data);
 
         const graph = new Graph();
 
@@ -224,7 +225,11 @@ export class Graph {
         }
 
         const keyEntry = Graph.keys[0];
-        const data = `//// <GENERATED CODE - State machine tool - date=${Date.now()}> ////${keyEntry.start}${JSON.stringify(this)}${keyEntry.end}`;
+
+        const dataObj = this.toJSON();
+        trimUndefinedRecursively(dataObj);
+
+        const data = `//// <GENERATED CODE - State machine tool - date=${Date.now()}> ////${keyEntry.start}${JSON.stringify(compress(dataObj))}${keyEntry.end}`;
 
         return config.toCode({
             data: data,
@@ -509,8 +514,14 @@ export abstract class GraphNodeLink {
         this._height = Math.max(value, this.minHeight);
     }
 
+    public get isResizable() {
+        return this.type.resizable === undefined || !!this.type.resizable;
+    }
+
     public updateHeight() {
-        if(this.isHeightResizable) {
+        if(!this.isResizable && this.type.defaultSize.height) {
+            this.height = this.type.defaultSize.height;
+        } else if(this.isHeightResizable) {
             // eslint-disable-next-line no-self-assign
             this.height = this.height;
         } else {
@@ -518,8 +529,12 @@ export abstract class GraphNodeLink {
         }
     }
     public updateWidth() {
-        // eslint-disable-next-line no-self-assign
-        this.width = this.width;
+        if(!this.isResizable && this.type.defaultSize.width) {
+            this.width = this.type.defaultSize.width;
+        } else {
+            // eslint-disable-next-line no-self-assign
+            this.width = this.width;
+        }
     }
 
     public get minWidth() {

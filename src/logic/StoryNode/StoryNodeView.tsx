@@ -72,7 +72,7 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
             <Properties isHeader={false} properties={Object.keys(node.propertiesInfo).filter(k => k !== node.type.headerPropertyId)} nodeLink={node} forceUpdate={props.forceUpdate} />
         </>}
 
-        <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
+        {!node.isResizable ? undefined : <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
             e.stopPropagation();
 
             const initialPos = {
@@ -89,7 +89,7 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
 
                 props.forceUpdate();
             });
-        }}></div>
+        }}></div>}
     </div>
 }
 

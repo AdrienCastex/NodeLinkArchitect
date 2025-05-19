@@ -54,7 +54,7 @@ export function StoryLinkView(props: { offset: { x: number, y: number }, forceUp
             ? <Properties isHeader={false} properties={Object.keys(link.propertiesInfo).filter(k => k !== link.type.headerPropertyId)} nodeLink={link} forceUpdate={props.forceUpdate} />
             : undefined
         }
-        <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
+        {!link.isResizable ? undefined : <div className={"resize-handle " + (isHeightResizable ? 'xy' : 'x')} onMouseDown={(e) => {
             e.stopPropagation();
 
             initialPos = {
@@ -71,6 +71,6 @@ export function StoryLinkView(props: { offset: { x: number, y: number }, forceUp
 
                 props.forceUpdate();
             });
-        }}></div>
+        }}></div>}
     </div>
 }

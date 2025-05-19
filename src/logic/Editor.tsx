@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { Ref, useEffect, useRef } from "react";
 import * as monaco from 'monaco-editor';
 import { monacoEditorOptionsBase } from "./monacoEditorOptionsBase";
 import { Graph } from "./Graph";
@@ -19,6 +19,7 @@ export interface ICreateEditorOptions {
     isDarkMode?: boolean
     overrideConfig?: monaco.editor.IStandaloneEditorConstructionOptions
     lib?: string
+    onSaveRequest: { ref: () => void }
 }
 
 export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
@@ -82,6 +83,17 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
         e.event.stopPropagation();
     });
 
+    const saveRequested = (e: monaco.IKeyboardEvent) => {
+        if(e.ctrlKey && e.keyCode === monaco.KeyCode.KeyS) {
+            e.stopPropagation();
+            e.preventDefault();
+            options.onSaveRequest.ref();
+            return true;
+        }
+
+        return false;
+    }
+
     if(before || after) {
         const nbBeforeLines = before ? before.split('\n').length : 0;
         const nbAfterLines = after ? after.split('\n').length : 0;
@@ -106,6 +118,10 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
         ((editor as any).setHiddenAreas as (ranges: monaco.IRange[], source?: unknown) => void)(createRanges(code.split('\n')));
         
         editor.onKeyDown(e => {
+            if(saveRequested(e)) {
+                return;
+            }
+
             const code = editor.getValue();
             const codeLines = code.split('\n');
             const hiddenRanges = createRanges(codeLines);
@@ -147,6 +163,12 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
                 e.preventDefault();
             }
         });
+    } else {
+        editor.onKeyDown(e => {
+            if(saveRequested(e)) {
+                return;
+            }
+        });
     }
 
     let skipOnChange = false;
@@ -171,6 +193,8 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     return editor;
 }
 
+const viewStates: { [guid: string]: monaco.editor.ICodeEditorViewState } = {};
+
 export function Editor(props: {
     className?: string
     placeholder: string
@@ -181,6 +205,7 @@ export function Editor(props: {
     isDarkMode?: boolean
     overrideConfig?: monaco.editor.IStandaloneEditorConstructionOptions
     lib?: string
+    viewStateGUID?: string
 } & Omit<ICreateEditorOptions, "domElement">) {
     const ref = useRef<HTMLDivElement>();
     const editor = useRef<monaco.editor.IStandaloneCodeEditor>(undefined);
@@ -209,9 +234,17 @@ export function Editor(props: {
             ...props,
             domElement: ref.current
         });
+        
+        if(props.viewStateGUID && viewStates[props.viewStateGUID]) {
+            editor.current.restoreViewState(viewStates[props.viewStateGUID]);
+        }
 
         return () => {
             if(editor.current) {
+                if(props.viewStateGUID) {
+                    viewStates[props.viewStateGUID] = editor.current.saveViewState();
+                }
+
                 editor.current.dispose();
                 editor.current = undefined;
             }

@@ -4,7 +4,7 @@ import { Editor } from "../Editor";
 import { Config, ConfigOptionsPropViewType } from "../Config";
 import { Form } from "react-bootstrap";
 import './PropertiesStyle';
-import { saveLoadServerUrl } from "../App/AppView";
+import { save, saveLoadServerUrl } from "../App/AppView";
 
 export function Properties(props: { isHeader: boolean, properties: string[]; excludeProperties?: string[]; nodeLink: GraphNodeLink; forceUpdate: () => void; }) {
     const nodeLink = props.nodeLink;
@@ -28,6 +28,9 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
     
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const lineHeightPx = 1.5 * rem;
+
+    const [saveRef] = useState<{ ref: () => void }>({ ref: undefined });
+    saveRef.ref = () => save();
 
     return <>
         {Object.keys(grouped).filter(groupKey => grouped[groupKey].items.length > 0).map(groupKey => <div className={"properties-group " + (props.isHeader ? 'header' : '')} key={groupKey} style={{ height: `${grouped[groupKey].heightPx}px` }}>
@@ -63,6 +66,7 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
                             language={entry.language ?? Config.instance.defaultLang.language}
                             codeBefore={entry.codeBefore}
                             codeAfter={entry.codeAfter}
+                            onSaveRequest={saveRef}
                         />;
                     }
                     case ConfigOptionsPropViewType.Checkbox: {

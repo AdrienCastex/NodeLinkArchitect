@@ -14,6 +14,7 @@
     text-align: center;
 }
 
+.side-btn .side-btn-items,
 .side-btn .side-btn-desc {
     display: none;
     
@@ -24,6 +25,10 @@
     padding: 0.5ch;
 }
 
+.side-btn .side-btn-items:not(:empty) {
+    display: inline-block;
+    height: 1.55em;
+}
 .side-btn:hover .side-btn-desc {
     display: inline-block;
 }

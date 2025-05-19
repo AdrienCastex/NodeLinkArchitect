@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Graph, GraphLink, GraphNode } from "../Graph";
 import { StoryNodeView } from "../StoryNode/StoryNodeView";
 import "./AppStyle";
@@ -140,6 +140,8 @@ const scrollViewport = {
     viewportSpeed: 45
 };
 
+export let save: () => void = undefined;
+
 export const updateView = () => scrollViewport?.refresh();
 
 setInterval(() => {
@@ -192,6 +194,61 @@ export function AppView() {
         h: number
     }>(undefined);
     const [_, forceUpdate] = useReducer((x) => x + 1, 0);
+    const [saving, setSaving] = useState<{ status: 'pending' | 'done' | 'error' }[]>([]);
+
+    save = useCallback(() => {
+        const currentSavingEntry: typeof saving[0] = {
+            status: 'pending'
+        };
+
+        setSaving([ currentSavingEntry, ...saving ]);
+        Graph.current.save(saveLoadServerUrl)
+            .then(() => {
+                currentSavingEntry.status = 'done';
+                forceUpdate();
+            })
+            .catch(() => {
+                currentSavingEntry.status = 'error';
+                forceUpdate();
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    setSaving(saving.filter(s => s !== currentSavingEntry));
+                }, 5000);
+            });
+    }, [saving, saveLoadServerUrl]);
+
+    const [saveConfigRef] = useState<{ ref: () => void }>({ ref: undefined });
+    saveConfigRef.ref = () => {
+        let code;
+        try {
+            code = Graph.current.toJS();
+        } // eslint-disable-next-line no-unused-vars
+        catch(ex) {
+        }
+
+        // eslint-disable-next-line no-eval
+        const configGetter = eval(`() => { ${configStr} }`);
+        Config.instance = new Config(configGetter());
+        localStorage.setItem('config', configStr);
+        
+        if(code) {
+            Graph.current = Graph.parse(code);
+            setGraph(() => Graph.current);
+        }
+        
+        for(const link of Graph.current.links) {
+            link.updateHeight();
+            link.updateWidth();
+        }
+        
+        for(const node of Graph.current.nodes) {
+            node.updateHeight();
+            node.updateWidth();
+        }
+
+        setShowConfigEditor(false);
+    };
 
     const loadData = async () => {
         let codePromise: Promise<string>;
@@ -516,7 +573,7 @@ export function AppView() {
         }}></div>
         
         {currentSubGraphGUIDs.length > 0 ? <div className="sub-graph-controls" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
-            <button onClick={() => setCurrentSubGraphGUIDs(currentSubGraphGUIDs.slice(1))}>{'<'} Exit sub-graph {graph.nodes.find(n => n.guid === currentSubGraphGUIDs[0]).properties.name.value ?? ''}</button>
+            <button onClick={() => setCurrentSubGraphGUIDs(currentSubGraphGUIDs.slice(1))}>{'<'} Exit sub-graph {currentSubGraphGUIDs.map(guid => graph.nodes.find(n => n.guid === guid).properties.name.value ?? '').reverse().join(' / ')}</button>
         </div> : undefined}
 
         <div className="viewport-content" style={{ transform: `scale(${viewport.scale})` }}>
@@ -653,167 +710,36 @@ export function AppView() {
         </div>
         
         <div className="btns-panel" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
-            <SideButton onClick={() => {
-                Graph.current.save(saveLoadServerUrl);
-                /*
-                const code = Graph.current.toJS();
-                //jsonJsTextarea.current.value = code;
-                localStorage.setItem('code', code);
+            <SideButton
+                onClick={save}
+                desc={<>Generate code to [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}
+                sideItems={saving.map((e, i) => <div className="" key={i}>{e.status === 'pending' ? <span className="spinning">⟳</span> : e.status === 'done' ? '🗸' : '✖'}</div>)}
+            >Data 🖪</SideButton>
 
-                if(serverUrl) {
-                    fetch(serverUrl, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            graph: Graph.current.toJSON(),
-                            code: code
-                        }),
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                } else {
-                    navigator.clipboard.writeText(code);
-                }*/
-            }} desc={<>Generate code to [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data 🖪</SideButton>
-            <SideButton onClick={async () => {
-                loadData();
-            }} desc={<>Load from [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}>Data ↺</SideButton>
-            {/*
-            <SideButton onClick={() => {
-                //const configStr = localStorage.getItem('config');
-                navigator.clipboard.writeText(configStr);
-            }} desc="Store current configuration to clipboard">Config 🖪</SideButton>
-            <SideButton onClick={async () => {
-                let code;
-                try {
-                    code = Graph.current.toJS();
-                } catch(ex) {
-                }
+            <SideButton
+                onClick={async () => {
+                    loadData();
+                }}
+                desc={<>Load from [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}
+            >Data ↺</SideButton>
 
-                const configStr = await navigator.clipboard.readText();
-
-                const configGetter = eval(`() => { ${configStr} }`);
-                Config.instance = new Config(configGetter());
-                localStorage.setItem('config', configStr);
-                setConfigStr(configStr);
-                
-                if(code) {
-                    Graph.current = Graph.parse(code);
-                    setGraph(() => Graph.current);
-                }
-            }} desc="Load configuration from clipboard">Config ↺</SideButton>*/}
             <SideButton onClick={async () => {
                 setShowConfigEditor(true);
                 
             }} desc="Edit configuration">Config 🖉</SideButton>
             <input type="text" title="Save/load server URL" onChange={(e) => setServerUrl(e.target.value ?? '')} value={serverUrl} placeholder="Save/load server URL" />
-            {/*
-            <div className="line">
-                <div className="btn" onClick={() => {
-                    const code = Graph.current.toJS();
-                    jsonJsTextarea.current.value = code;
-                    localStorage.setItem('code', code);
-                    forceUpdate();
-
-                    fetch("http://localhost:1900", {
-                        method: "POST",
-                        body: JSON.stringify({
-                            graph: Graph.current.toJSON(),
-                            code: code
-                        }),
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                }}>Generate JSON/code {'>'}</div>
-                <textarea placeholder="Generated code" ref={jsonJsTextarea} defaultValue={localStorage.getItem('code')} />
-                <div className="btn" onClick={() => {
-                    const code = jsonJsTextarea.current.value;
-
-                    if(!configTextareaRef.current.value) {
-                        const config = Graph.parseConfig(code);
-                        if(config) {
-                            const configGetter = eval(`() => { ${config} }`);
-                            Config.instance = new Config(configGetter());
-                            localStorage.setItem('config', config);
-                            configTextareaRef.current.value = config;
-                        }
-                    }
-
-                    Graph.current = Graph.parse(code);
-                    Graph.resetHistory();
-                    setGraph(() => Graph.current);
-                    localStorage.setItem('code', code);
-
-                    if(currentSubGraphGUIDs && !Graph.current.nodes.some(n => n.guid === currentSubGraphGUIDs[0] && n.typeId === '_subGraph_')) {
-                        setCurrentSubGraphGUIDs([]);
-                    }
-                }}>{'>'} From code</div>
-            </div>
-            <div className="line">
-                <textarea onChange={(e) => Graph.current.lib = e.target.value} placeholder="Lib" value={Graph.current.lib} />
-                <textarea ref={configTextareaRef} placeholder="Config" defaultValue={localStorage.getItem('config')} />
-                <div className="btn" onClick={() => {
-                    let code;
-                    try {
-                        code = Graph.current.toJS();
-                    } catch(ex) {
-                    }
-
-                    const configGetter = eval(`() => { ${configTextareaRef.current.value} }`);
-                    Config.instance = new Config(configGetter());
-                    localStorage.setItem('config', configTextareaRef.current.value);
-                    
-                    if(code) {
-                        Graph.current = Graph.parse(code);
-                        setGraph(() => Graph.current);
-                    }
-                }}>{'>'} Load config</div>
-            </div>*/}
         </div>
 
         {showConfigEditor ? <div className="config-editor-panel-wrapper">
             <div className="config-editor-panel-tools">
-                <button onClick={() => {
-                    let code;
-                    try {
-                        code = Graph.current.toJS();
-                    } // eslint-disable-next-line no-unused-vars
-                    catch(ex) {
-                    }
-
-                    // eslint-disable-next-line no-eval
-                    const configGetter = eval(`() => { ${configStr} }`);
-                    Config.instance = new Config(configGetter());
-                    localStorage.setItem('config', configStr);
-                    
-                    if(code) {
-                        Graph.current = Graph.parse(code);
-                        setGraph(() => Graph.current);
-                    }
-                    
-                    for(const link of Graph.current.links) {
-                        link.updateHeight();
-                        link.updateWidth();
-                    }
-                    
-                    for(const node of Graph.current.nodes) {
-                        node.updateHeight();
-                        node.updateWidth();
-                    }
-
-                    setShowConfigEditor(false);
-                }}>Apply</button>
+                <button onClick={saveConfigRef.ref}>Apply</button>
                 <button onClick={() => setShowConfigEditor(false)}>Close</button>
             </div>
             <div className="config-editor-panel">
                 <Editor
                     className="config-editor-panel-textarea"
                     code={configStr}
-                    onChange={(value) => {
-                        setConfigStr(value);
-                    }}
+                    onChange={setConfigStr}
                     isMonoline={false}
                     placeholder={''}
                     type={''}
@@ -831,6 +757,8 @@ export function AppView() {
                         theme: 'vs-dark'
                     }}
                     lib={configJsdoc}
+                    onSaveRequest={saveConfigRef}
+                    viewStateGUID="config-editor"
                 />
             </div>
         </div> : undefined}

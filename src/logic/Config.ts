@@ -87,6 +87,7 @@ export interface IConfigOptionsTypeEntry {
     nbOutputsMax?: number
     isVisible?: boolean
     style?: React.CSSProperties
+    resizable?: boolean
 }
 export interface IConfigOptionsType {
     [typeId: string]: IConfigOptionsTypeEntry
