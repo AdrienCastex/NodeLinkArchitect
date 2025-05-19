@@ -1,10 +1,10 @@
-import React, { useReducer } from "react";
+import React from "react";
 import { GraphLink, GraphNode } from "../Graph";
 import "./StoryLinkStyle";
 import { Viewport } from "../Viewport";
 import { Properties } from "../Properties/Properties";
 
-export function StoryLinkView(props: { forceUpdate: () => void, isSelected: boolean, nodes: GraphNode[], link: GraphLink, deleteLink(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void }) {
+export function StoryLinkView(props: { offset: { x: number, y: number }, forceUpdate: () => void, isSelected: boolean, nodes: GraphNode[], link: GraphLink, deleteLink(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void }) {
     const link = props.link;
     
     let initialPos: { x: number, y: number };
@@ -19,10 +19,9 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
     const isHeightResizable = link.isHeightResizable;
 
     const style: React.CSSProperties = {
-        top: (!link.hasTargetNode ? link.y : (srcNode.y + srcNode.height + (targetNode?.y || 0)) / 2) + viewport.y,
-        left: (!link.hasTargetNode ? link.x : (srcNode.x + srcNode.width / 2 + (targetNode?.x || 0) + (targetNode?.width || 0) / 2) / 2 - width / 2) + viewport.x,
-        width: width,
-        height: `${link.height}px`
+        top: (!link.hasTargetNode ? link.y : (srcNode.y + srcNode.height + targetNode.y) / 2) + viewport.y + props.offset.y,
+        left: (!link.hasTargetNode ? link.x : (srcNode.x + targetNode.x) / 2 - width / 2 + props.offset.x) + viewport.x,
+        width: width
     };
 
     if(!link.type.headerPropertyId) {
@@ -30,6 +29,8 @@ export function StoryLinkView(props: { forceUpdate: () => void, isSelected: bool
             <div className="remove-btn" onClick={(e) => props.deleteLink(e.ctrlKey)}>x</div>
         </div>;
     }
+
+    style.height = `${link.height}px`;
 
     return <div className={`graph-link ${!link.hasTargetNode ? 'target-id' : ''} ${props.isSelected ? 'selected': ''}`} style={Object.assign({ marginTop: `-${link.propertiesInfo ? Object.entries(link.propertiesInfo).length : 0}em` }, link.type.style ?? {}, style)}>
         <table className="header-table">

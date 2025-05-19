@@ -251,6 +251,30 @@ export class Graph {
     openGroups: { [nodeLinkGUID: string]: string[] } = {};
 
     currentSubGraphGUIDs: string[] = [];
+
+    public static groupLinks(links: GraphLink[]) {
+        const groups: { [id: string]: GraphLink[] } = {};
+
+        for(const link of links) {
+            const groupId = link.type.hasTargetNode ? (link.srcNodeGuid + ' -> ' + link.targetNodeGuid) : link.guid;
+            let groupArray = groups[groupId];
+            if(!groupArray) {
+                groupArray = [];
+                groups[groupId] = groupArray;
+            }
+
+            groupArray.push(link);
+        }
+
+        return Object.values(groups);
+    }
+
+    public get groupedLinks(): GraphLink[][] {
+        return Graph.groupLinks(this.links);
+    }
+    public get groupedFlatLinks(): GraphLink[][] {
+        return Graph.groupLinks(this.flatLinks);
+    }
     
     public get flatNodes() {
         return this.nodes.filter(n => !n.typeId.startsWith('_subGraph_'));
@@ -548,20 +572,21 @@ export abstract class GraphNodeLink {
         const isOpenList = Graph.current.openGroups[this.guid] ?? [];
     
         const allPropsKeys = Object.keys(properties);
-        const grouped = allPropsKeys.filter(key => propertiesToSelect.includes(key)).reduce((p, c) => {
-            const prop = properties[c];
+        const grouped = allPropsKeys/*.filter(key => propertiesToSelect.includes(key))*/.reduce((p, propKey) => {
+            const prop = properties[propKey];
             const groupKey = prop.group ?? '';
             const isDefaultGroup = !groupKey;
+            const isPropertyIncluded = propertiesToSelect.includes(propKey);
 
             let group = p[groupKey];
             if(!group) {
                 group = {
                     items: [],
-                    itemsNbLines: [],
-                    totalFixedNbLines: !isDefaultGroup ? 1 : 0,
+                    totalFixedNbLines: isDefaultGroup ? 0 : 1,
+                    totalFixedNbLinesFiltered: isDefaultGroup ? 0 : 1,
                     singleAutoLineHeight: 0,
-                    nbFixedHeight: !isDefaultGroup ? 1 : 0,
                     nbAutoLines: 0,
+                    nbAutoLinesFiltered: 0,
                     heightPx: 0,
                     totalAutoHeight: 0,
                     minHeightPx: 0,
@@ -570,7 +595,9 @@ export abstract class GraphNodeLink {
                 };
                 p[groupKey] = group;
             }
-            group.items.push(c);
+            if(isPropertyIncluded) {
+                group.items.push(propKey);
+            }
             
             let nbLines: number = undefined;
 
@@ -593,22 +620,32 @@ export abstract class GraphNodeLink {
             }
 
             if(nbLines) {
-                ++group.nbFixedHeight;
                 group.totalFixedNbLines += nbLines;
+                if(isPropertyIncluded) {
+                    group.totalFixedNbLinesFiltered += nbLines;
+                }
             } else {
                 ++group.nbAutoLines;
+                if(isPropertyIncluded) {
+                    ++group.nbAutoLinesFiltered;
+                }
             }
-            
-            group.itemsNbLines.push(nbLines);
     
             return p;
-        }, {} as { [groupKey: string]: { singleAutoLineHeight: number, nbFixedHeight: number, nbAutoLines: number, totalFixedNbLines: number, items: string[], itemsNbLines: (number | undefined)[], heightPx: number, totalAutoHeight: number, totalFixedHeight: number, minHeightPx: number, isOpen: boolean } });
+        }, {} as { [groupKey: string]: {
+            singleAutoLineHeight: number,
+            nbAutoLines: number,
+            nbAutoLinesFiltered: number,
+            totalFixedNbLines: number,
+            totalFixedNbLinesFiltered: number,
+            items: string[],
+            heightPx: number,
+            totalAutoHeight: number,
+            totalFixedHeight: number,
+            minHeightPx: number,
+            isOpen: boolean
+        } });
     
-        //const nbProperties = allPropsKeys.length - Object.keys(grouped).filter(groupKey => groupKey && !isOpenList.includes(groupKey)).map(e => grouped[e].items.length).reduce((p, c) => p + c, 0);
-        //const fixedHeightProperties = allPropsKeys.filter(propKey => this.isPropertyHeightFixed(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group)));
-        //const nbFixedHeightProperties = fixedHeightProperties.length;
-        //const nbCustomlineProperties = allPropsKeys.filter(propKey => this.isPropertyHeightFixed(propKey) && (!properties[propKey].group || isOpenList.includes(properties[propKey].group))).length;
-        //const nbAutolinesProperties = nbProperties - nbFixedHeightProperties;
         const nbAutolinesProperties = Object.values(grouped)
             .filter(g => g.isOpen)
             .reduce((p, c) => p + c.nbAutoLines, 0);
@@ -619,16 +656,16 @@ export abstract class GraphNodeLink {
         const totalHeightPx = this._height - border * 2;
     
         const lineHeightPx = 1.5 * rem;
-        const totalFixedHeight = (Object.values(grouped).reduce((p, c) => p + (c.isOpen ? c.totalFixedNbLines : 1), 0) + (Object.keys(grouped).length - 1)) * lineHeightPx;
+        const totalFixedHeight = Object.values(grouped).reduce((p, c) => p + (c.isOpen ? c.totalFixedNbLines : 1), 0) * lineHeightPx;
         const heightForAutolines = totalHeightPx - totalFixedHeight;
         const oneMultilineHeight = heightForAutolines / nbAutolinesProperties;
     
         for(const groupKey in grouped) {
             const group = grouped[groupKey];
-            group.totalAutoHeight = group.nbAutoLines > 0 ? oneMultilineHeight * group.nbAutoLines : 0;
-            group.totalFixedHeight = group.totalFixedNbLines * lineHeightPx;
-            group.heightPx = group.totalAutoHeight + group.totalFixedHeight;
-            group.minHeightPx = group.nbAutoLines * lineHeightPx + group.totalFixedHeight;
+            group.totalAutoHeight = group.nbAutoLinesFiltered > 0 ? oneMultilineHeight * group.nbAutoLinesFiltered : 0;
+            group.totalFixedHeight = group.totalFixedNbLinesFiltered * lineHeightPx;
+            group.heightPx = group.isOpen ? group.totalAutoHeight + group.totalFixedHeight : lineHeightPx;
+            group.minHeightPx = group.nbAutoLinesFiltered * lineHeightPx + group.totalFixedHeight;
             group.singleAutoLineHeight = oneMultilineHeight;
         }
 

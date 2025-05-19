@@ -81,9 +81,6 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     editor.onMouseDown(e => {
         e.event.stopPropagation();
     });
-    editor.onMouseUp(e => {
-        e.event.stopPropagation();
-    });
 
     if(before || after) {
         const nbBeforeLines = before ? before.split('\n').length : 0;

@@ -25,7 +25,6 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
             e.stopPropagation();
             e.preventDefault();
 
-            // max 1 output link for _subGraph_
             if(node.type.nbOutputsMax === undefined || Graph.current.links.filter(l => l.srcNodeGuid === node.guid).length < node.type.nbOutputsMax) {
                 props.onDrawingLineStart(node);
             }

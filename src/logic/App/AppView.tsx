@@ -509,9 +509,11 @@ export function AppView() {
             {!selectionArea ? undefined : <div className="selection-area" style={{ left: selectionArea.x + viewport.x, top: selectionArea.y + viewport.y, width: selectionArea.w, height: selectionArea.h, borderWidth: `${3 / viewport.scale}px` }} />}
 
             {graph && graph === Graph.current ? <>
-                {graph.links.filter(l => l.getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map((l) => {
+                {graph.groupedLinks.filter(l => l[0].getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map(links => links.map((l, i) => {
+                    const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
+
                     const srcNode = l.getSrcNode(graph.nodes);
-                    const point1 = { x: srcNode.x + srcNode.width / 2 + viewport.x, y: srcNode.height + srcNode.y + viewport.y };
+                    const point1 = { x: srcNode.x + (l.hasTargetNode ? getStep(srcNode) : 0) + viewport.x, y: srcNode.height + srcNode.y + viewport.y };
                     let point2: { x: number, y: number };
 
                     if(!l.hasTargetNode) {
@@ -521,19 +523,64 @@ export function AppView() {
                         };
                     } else {
                         const targetNode = l.getTargetNode(graph.nodes);
-                        point2 = { x: targetNode.x + targetNode.width / 2 + viewport.x, y: targetNode.y + viewport.y };
+                        point2 = { x: targetNode.x + getStep(targetNode) + viewport.x, y: targetNode.y + viewport.y };
                     }
                     
                     return <LinkLine key={l.guid} point1={point1} point2={point2} isSplit={l.hasTargetNode} />
-                })}
+                }))}
 
-                {graph.links.filter(l => l.getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map((l) => <StoryLinkView forceUpdate={forceUpdate} isSelected={selectedLinks.includes(l)} nodes={graph.nodes} key={l.guid} link={l} deleteLink={(force: boolean) => {
-                    if(force || confirm("Are you sure ?")) {
-                        graph.links = graph.links.filter(e => e !== l);
-                        graph.saveHistory();
-                        forceUpdate();
+                {graph.groupedLinks.filter(l => l[0].getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map(links => links.map((l, i) => {
+                    let offset: { x: number, y: number };
+
+                    if(l.hasTargetNode) {
+                        const spacing = 5;
+                        const totalSizeY = links.reduce((p, c) => p + c.height + spacing, 0);
+
+                        const offsetY = links.filter((_, i2) => i2 < i).reduce((p, c) => p + c.height + spacing, 0) + l.height / 2 - totalSizeY / 2;
+                        const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
+
+                        const srcNode = l.getSrcNode(graph.nodes);
+                        const targetNode = l.getTargetNode(graph.nodes);
+
+                        const srcStep = getStep(srcNode);
+                        const targetStep = getStep(targetNode);
+                        
+                        const distY = (srcNode.y + srcNode.height) - (targetNode.y); // a
+                        const distX = (srcNode.x + srcStep) - (targetNode.x + targetStep); // b
+                        
+                        const x1 = 0;
+                        const x2 = offsetY * distX / distY;
+                        
+                        const x = Math.abs(distY) >= 150 ? x2 : x1;
+
+                        offset = {
+                            x: (srcStep + targetStep) / 2 + x,
+                            y: offsetY
+                        };
+                    } else {
+                        offset = {
+                            x: 0,
+                            y: 0
+                        };
                     }
-                }} onDragStart={updateDragStart(l)} />)}
+
+                    return <StoryLinkView
+                        offset={offset}
+                        forceUpdate={forceUpdate}
+                        isSelected={selectedLinks.includes(l)}
+                        nodes={graph.nodes}
+                        key={l.guid}
+                        link={l}
+                        deleteLink={(force: boolean) => {
+                            if(force || confirm("Are you sure ?")) {
+                                graph.links = graph.links.filter(e => e !== l);
+                                graph.saveHistory();
+                                forceUpdate();
+                            }
+                        }}
+                        onDragStart={updateDragStart(l)}
+                    />
+                }))}
                 
                 {graph.nodes.filter(n => n.subGraphGUID === currentSubGraphGUIDs[0]).map((n) => <StoryNodeView forceUpdate={forceUpdate} isSelected={selectedNodes.includes(n)} key={n.guid} node={n} onDragStart={updateDragStart(n)} onDrawingLineStart={(node) => {
                     drawingLine = {
@@ -546,7 +593,7 @@ export function AppView() {
                     forceUpdate();
                 }} onDrawingLineEnd={(node) => {
                     if(drawingLine) {
-                        if(drawingLine.srcNode !== node && Config.instance.currentLinkMode.hasTargetNode && Graph.current.links.every(link => [link.srcNodeGuid, link.targetNodeGuid].some(guid => ![node.guid, drawingLine.srcNode.guid].includes(guid)))) {
+                        if(drawingLine.srcNode !== node && Config.instance.currentLinkMode.hasTargetNode /*&& Graph.current.links.every(link => [link.srcNodeGuid, link.targetNodeGuid].some(guid => ![node.guid, drawingLine.srcNode.guid].includes(guid)))*/) {
                             const link = new GraphLink();
                             link.srcNodeGuid = drawingLine.srcNode.guid;
                             link.targetNodeGuid = node.guid;
@@ -762,6 +809,16 @@ export function AppView() {
                     if(code) {
                         Graph.current = Graph.parse(code);
                         setGraph(() => Graph.current);
+                    }
+                    
+                    for(const link of Graph.current.links) {
+                        link.updateHeight();
+                        link.updateWidth();
+                    }
+                    
+                    for(const node of Graph.current.nodes) {
+                        node.updateHeight();
+                        node.updateWidth();
                     }
 
                     setShowConfigEditor(false);
