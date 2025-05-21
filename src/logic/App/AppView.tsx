@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { Graph, GraphLink, GraphNode } from "../Graph";
+import { Graph, GraphLink, GraphNode, GraphNodeLink } from "../Graph";
 import { StoryNodeView } from "../StoryNode/StoryNodeView";
 import "./AppStyle";
 import { Viewport } from "../Viewport";
@@ -581,23 +581,68 @@ export function AppView() {
 
             {graph && graph === Graph.current ? <>
                 {graph.groupedLinks.filter(l => l[0].getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map(links => links.map((l, i) => {
-                    const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
-
-                    const srcNode = l.getSrcNode(graph.nodes);
-                    const point1 = { x: srcNode.x + (l.hasTargetNode ? getStep(srcNode) : 0) + viewport.x, y: srcNode.height + srcNode.y + viewport.y };
-                    let point2: { x: number, y: number };
 
                     if(!l.hasTargetNode) {
-                        point2 = {
-                            x: l.x + l.width / 2 + viewport.x,
-                            y: l.y + viewport.y
-                        };
-                    } else {
+                        const srcNode = l.getSrcNode(graph.nodes);
                         const targetNode = l.getTargetNode(graph.nodes);
-                        point2 = { x: targetNode.x + getStep(targetNode) + viewport.x, y: targetNode.y + viewport.y };
+
+                        const getPoint = (srcNode: GraphNodeLink) => ({
+                            x: srcNode.x + srcNode.width / 2 + viewport.x,
+                            y: srcNode.y + srcNode.height / 2 + viewport.y
+                        });
+                        const getRect = (targetNode: GraphNodeLink) => ({
+                            min: {
+                                x: targetNode.x + viewport.x,
+                                y: targetNode.y + viewport.y,
+                            },
+                            max: {
+                                x: targetNode.x + targetNode.width + viewport.x,
+                                y: targetNode.y + targetNode.height + viewport.y,
+                            },
+                        });
+
+                        const findClosestPoint = (p: {x: number, y: number}, rect: { min: {x: number, y:number}, max: {x: number, y:number} }) => {
+                            let dx = Math.max(rect.min.x - p.x, 0, p.x - rect.max.x);
+                            let dy = Math.max(rect.min.y - p.y, 0, p.y - rect.max.y);
+
+                            if(p.x > rect.min.x) {
+                                dx *= -1;
+                            }
+                            if(p.y > rect.min.y) {
+                                dy *= -1;
+                            }
+
+                            return {
+                                x: p.x + dx,
+                                y: p.y + dy
+                            }
+                        }
+                        
+                        const rect = l.hasTargetNode ? getRect(targetNode) : getRect(l);
+                        
+                        const p2 = findClosestPoint(getPoint(l), rect);
+                        const p1 = findClosestPoint(p2, getRect(srcNode));
+                        
+                        return <LinkLine key={l.guid} point1={p1} point2={p2} isSplit={l.hasTargetNode} />
+                    } else {
+                        const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
+
+                        const srcNode = l.getSrcNode(graph.nodes);
+                        const point1 = { x: srcNode.x + (l.hasTargetNode ? getStep(srcNode) : 0) + viewport.x, y: srcNode.height + srcNode.y + viewport.y };
+                        let point2: { x: number, y: number };
+
+                        if(!l.hasTargetNode) {
+                            point2 = {
+                                x: l.x + l.width / 2 + viewport.x,
+                                y: l.y + viewport.y
+                            };
+                        } else {
+                            const targetNode = l.getTargetNode(graph.nodes);
+                            point2 = { x: targetNode.x + getStep(targetNode) + viewport.x, y: targetNode.y + viewport.y };
+                        }
+                        
+                        return <LinkLine key={l.guid} point1={point1} point2={point2} isSplit={l.hasTargetNode} />
                     }
-                    
-                    return <LinkLine key={l.guid} point1={point1} point2={point2} isSplit={l.hasTargetNode} />
                 }))}
 
                 {graph.groupedLinks.filter(l => l[0].getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map(links => links.map((l, i) => {
@@ -607,7 +652,7 @@ export function AppView() {
                         const spacing = 5;
                         const totalSizeY = links.reduce((p, c) => p + c.height + spacing, 0);
 
-                        const offsetY = links.filter((_, i2) => i2 < i).reduce((p, c) => p + c.height + spacing, 0) + l.height / 2 - totalSizeY / 2;
+                        const offsetY = links.filter((_, i2) => i2 < i).reduce((p, c) => p + c.height + spacing, 0) - totalSizeY / 2;
                         const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
 
                         const srcNode = l.getSrcNode(graph.nodes);
@@ -616,8 +661,11 @@ export function AppView() {
                         const srcStep = getStep(srcNode);
                         const targetStep = getStep(targetNode);
                         
-                        const distY = (srcNode.y + srcNode.height) - (targetNode.y); // a
-                        const distX = (srcNode.x + srcStep) - (targetNode.x + targetStep); // b
+                        const point1 = { x: srcNode.x + srcStep, y: srcNode.height + srcNode.y };
+                        const point2 = { x: targetNode.x + targetStep, y: targetNode.y };
+                        
+                        const distY = point1.y - point2.y; // a
+                        const distX = point1.x - point2.x; // b
                         
                         const x1 = 0;
                         const x2 = offsetY * distX / distY;

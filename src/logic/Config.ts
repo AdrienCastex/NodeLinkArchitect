@@ -162,6 +162,7 @@ export class Config {
                     width: 144,
                     height: 36
                 },
+                resizable: false,
                 nbOutputsMax: 1,
                 isVisible: false,
                 style: graphStyle
@@ -172,6 +173,7 @@ export class Config {
                     width: 144,
                     height: 36
                 },
+                resizable: false,
                 nbOutputsMax: 0,
                 isVisible: false,
                 style: graphStyle

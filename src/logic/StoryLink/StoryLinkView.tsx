@@ -32,7 +32,7 @@ export function StoryLinkView(props: { offset: { x: number, y: number }, forceUp
 
     style.height = `${link.height}px`;
 
-    return <div className={`graph-link ${!link.hasTargetNode ? 'target-id' : ''} ${props.isSelected ? 'selected': ''}`} style={Object.assign({ marginTop: `-${link.propertiesInfo ? Object.entries(link.propertiesInfo).length : 0}em` }, link.type.style ?? {}, style)}>
+    return <div className={`graph-link ${!link.hasTargetNode ? 'target-id' : ''} ${props.isSelected ? 'selected': ''}`} style={Object.assign({}, link.type.style ?? {}, style)}>
         <table className="header-table">
             <tbody>
                 <tr>
