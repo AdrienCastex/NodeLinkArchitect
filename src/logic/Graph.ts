@@ -2,6 +2,15 @@ import { Config, ConfigOptionsPropViewType, IConfigOptionsLinkTypeAddon, IConfig
 import { IViewport } from "./Viewport";
 import { compress, decompress, trimUndefinedRecursively } from 'compress-json'
 
+export interface IGraphTree {
+    hierarchicalPath: string[]
+    parentGuid: string
+    guid: string
+    graphNode: GraphNode
+    nodes: GraphNode[]
+    graphs: IGraphTree[]
+}
+
 export class Graph {
     public static current: Graph;
     protected static keys = [
@@ -256,6 +265,60 @@ export class Graph {
     openGroups: { [nodeLinkGUID: string]: string[] } = {};
 
     currentSubGraphGUIDs: string[] = [];
+    
+    public get graphTree() {
+        return this.graphTreeFlat[''];
+    }
+    public get graphTreeFlat() {
+        const parenting: { [id: string]: IGraphTree } = {};
+
+        const getParent = (parentId: string) => {
+            let entry = parenting[parentId];
+            if(!entry) {
+                entry = {
+                    hierarchicalPath: [],
+                    parentGuid: '',
+                    guid: parentId,
+                    graphNode: undefined,
+                    graphs: [],
+                    nodes: []
+                };
+                parenting[parentId] = entry;
+            }
+            return entry;
+        }
+
+        for(const node of this.nodes) {
+            const parentId = node.subGraphGUID || '';
+            const parentEntry = getParent(parentId);
+
+            parentEntry.nodes.push(node);
+            
+            if(node.typeId === '_subGraph_') {
+                const subGraphEntry = getParent(node.guid);
+                subGraphEntry.graphNode = node;
+                subGraphEntry.parentGuid = node.subGraphGUID;
+                parentEntry.graphs.push(subGraphEntry);
+            }
+        }
+
+        for(const id in parenting) {
+            const entry = parenting[id];
+            entry.hierarchicalPath.push(entry.guid);
+
+            let currentEntry: IGraphTree = entry;
+            while(currentEntry.parentGuid) {
+                entry.hierarchicalPath.splice(0, 0, currentEntry.parentGuid);
+                currentEntry = parenting[currentEntry.parentGuid];
+            };
+            
+            if(entry.guid) {
+                entry.hierarchicalPath.splice(0, 0, '');
+            }
+        }
+
+        return parenting;
+    }
 
     public static groupLinks(links: GraphLink[]) {
         const groups: { [id: string]: GraphLink[] } = {};

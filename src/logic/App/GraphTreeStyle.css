@@ -1,0 +1,59 @@
+
+.graph-tree-container {
+    position: absolute;
+    right: 11px;
+    top: 11px;
+    display: inline-block;
+    z-index: 10000;
+
+    opacity: 0.3;
+}
+
+.graph-tree-container:hover {
+    opacity: 1;
+}
+.graph-tree-container .graph-tree-wrapper {
+    position: absolute;
+    right: 6ch;
+    background-color: white;
+    color: black;
+    padding-right: 1ch;
+    white-space: nowrap;
+
+    max-height: calc(100vh - 2 * 11px);
+    min-width: 15ch;
+    overflow-y: auto;
+
+    box-shadow: -5px 5px 10px rgba(63, 120, 158, 0.22);
+}
+
+.graph-tree-name.parent-active {
+    border-color: rgb(63, 120, 158);
+}
+
+.graph-tree-sub {
+    border-left: 2ch solid #2a2a29;
+    /*padding-left: calc(2ch - 1ch);*/
+}
+.graph-tree-name {
+    padding: 0.5ch 1ch;
+    border-left: 2ch solid #2a2a29;
+}
+.graph-tree-name:not(.active) {
+    cursor: pointer;
+}
+.graph-tree-name.active {
+    border-color: rgb(63, 120, 158);
+}
+.graph-tree-name.active,
+.graph-tree-name:hover {
+    background-color: rgb(83, 167, 223);
+    color: white;
+}
+
+.graph-tree-container .side-btn {
+    background-color: white;
+    color: black;
+    padding: 0px 1ch;
+    margin-top: 0px !important;
+}

@@ -9,6 +9,7 @@ import { SideButton } from "./SideButton";
 import { Editor } from "../Editor";
 import defaultConfig from '../DefaultConfig.txt';
 import configJsdoc from '../../../tools/jsdoc/jsdoc.txt';
+import { GraphTreeContainer } from "./GraphTree";
 
 let dragStart: { x: number, y: number };
 let drawingLine: { x: number, y: number, srcNode: GraphNode };
@@ -756,6 +757,8 @@ export function AppView() {
 }}              >{kv[1].name}</div>)}
             </div>
         </div>
+        
+        <GraphTreeContainer graph={graph} currentSubGraphGUIDs={currentSubGraphGUIDs} onChangeCurrentSubGraphGUIDs={(values) => setCurrentSubGraphGUIDs(values)} />
         
         <div className="btns-panel" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
             <SideButton
