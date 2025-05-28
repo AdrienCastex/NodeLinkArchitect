@@ -17,7 +17,7 @@ export class Graph {
         { start: '{___stateMachineDataStart___}', end: '{___stateMachineDataEnd___}' },
         { start: '{___dialogStoryStart___}', end: '{___dialogStoryEnd___}' },
     ]
-    protected static currentVersion = 1;
+    public static currentVersion = 1;
 
     protected static extractDataObject(data: any): any {
         if(typeof data === 'string') {
@@ -73,7 +73,7 @@ export class Graph {
         const nodesMapping: { [srcGUID: string]: string } = {};
 
         for(const node of nodes) {
-            const newNode = GraphNode.parse(JSON.parse(JSON.stringify(node)), Graph.currentVersion);
+            const newNode = GraphNode.clone(node);
             newNode.guid = Graph.generateGUID();
             newNodes.push(newNode);
 
@@ -101,7 +101,7 @@ export class Graph {
 
         for(const link of links) {
             if(nodesMapping[link.srcNodeGuid] && (!link.hasTargetNode || nodesMapping[link.targetNodeGuid])) {
-                const newLink = GraphLink.parse(JSON.parse(JSON.stringify(link)), Graph.currentVersion);
+                const newLink = GraphLink.clone(link);
                 newLink.guid = Graph.generateGUID();
                 newLinks.push(newLink);
 
@@ -125,7 +125,7 @@ export class Graph {
                 const isExternalLink = srcFound || targetFound;
 
                 if(isInternalLink || cloneExternalLinks && isExternalLink) {
-                    const newLink = GraphLink.parse(JSON.parse(JSON.stringify(link.toJSON())), Graph.currentVersion);
+                    const newLink = GraphLink.clone(link);
                     newLink.guid = Graph.generateGUID();
 
                     if(srcFound) {
@@ -343,41 +343,108 @@ export class Graph {
     public get groupedFlatLinks(): GraphLink[][] {
         return Graph.groupLinks(this.flatLinks);
     }
+
+    public get subGraphCloneNodes() {
+        return this.nodes.filter(n => n.typeId === '_subGraph_clone_');
+    }
     
     public get flatNodes() {
-        return this.nodes.filter(n => !n.typeId.startsWith('_subGraph_'));
+        const nodes: GraphNode[] = [];
+
+        for(const node of this.nodes) {
+            if(node.typeId.startsWith('_subGraph_')) {
+                if(node.typeId === '_subGraph_clone_') {
+                    const targetGraphId = node.properties.id.value;
+                    const subNodes = this.nodes.filter(n => n.subGraphGUID === targetGraphId && ['_subGraph_output_', '_subGraph_input_'].every(t => n.typeId !== t));
+                    
+                    for(const subNode of subNodes) {
+                        const clonedNode = subNode.clone();
+                        clonedNode.guid += `-${node.guid}`;
+                        clonedNode.subGraphGUID = node.guid;
+                        nodes.push(clonedNode);
+                    }
+                }
+            } else {
+                nodes.push(node);
+            }
+        }
+
+        return nodes;
     }
     public get flatLinks() {
         const linksToRemove: GraphLink[] = [];
         const linksToAdd: GraphLink[] = [];
 
+        const subGraphCloneSuffix: { [subGraphId: string]: string[] } = {};
+        for(const subGraphCloneNode of this.subGraphCloneNodes) {
+            const src = subGraphCloneNode.properties.id.value as string;
+            let array = subGraphCloneSuffix[src];
+            if(!array) {
+                array = [];
+                subGraphCloneSuffix[src] = array;
+            }
+            const prefix = `-${subGraphCloneNode.guid}`;
+            array.push(prefix);
+
+            for(const link of this.links) {
+                const srcNode = link.getSrcNode(this.nodes);
+                const targetNode = link.getTargetNode(this.nodes);
+
+                if(srcNode.subGraphGUID === src && srcNode.typeId !== '_subGraph_input_' && (!targetNode || targetNode.typeId !== '_subGraph_output_') && link.typeId !== '_subGraph_input_link_') {
+                    const newLink = link.clone();
+                    newLink.guid += prefix;
+                    newLink.srcNodeGuid += prefix;
+                    if(newLink.targetNodeGuid) {
+                        newLink.targetNodeGuid += prefix;
+                    }
+                    linksToAdd.push(newLink);
+                }
+            }
+        }
+
         for(const link of this.links) {
             if(link.typeId === '_subGraph_output_link_') { // convert sub graph output links
-                const graphNodeGuid = link.srcNodeGuid;
-                const outputGraphNode = this.nodes.find(n => n.typeId === '_subGraph_output_' && n.subGraphGUID === graphNodeGuid);
+                const srcNode = link.getSrcNode(this.nodes);
+                const isSrcSubGraphClone = srcNode.typeId === '_subGraph_clone_';
+
+                const subGraphId = isSrcSubGraphClone ? srcNode.properties.id.value as string : srcNode.guid;
+                const outputGraphNode = this.nodes.find(n => n.typeId === '_subGraph_output_' && n.subGraphGUID === subGraphId);
                 
                 const outputLinks = this.links.filter(l => l.targetNodeGuid === outputGraphNode.guid);
                 linksToRemove.push(...outputLinks);
                 linksToRemove.push(link);
 
                 linksToAdd.push(...outputLinks.map(l => {
-                    const newLink = GraphLink.parse(JSON.parse(JSON.stringify(l.toJSON())), Graph.currentVersion);
+                    const newLink = l.clone();
                     newLink.targetNodeGuid = link.targetNodeGuid;
+                    
+                    if(isSrcSubGraphClone) {
+                        newLink.srcNodeGuid += `-${srcNode.guid}`;
+                    }
+
                     return newLink;
                 }));
             } else {
                 const targetNode = link.getTargetNode(this.nodes);
                 
-                if(targetNode && targetNode.typeId === '_subGraph_') { // convert sub graph input links
-                    const inputGraphNode = this.nodes.find(n => n.typeId === '_subGraph_input_' && n.subGraphGUID === targetNode.guid);
+                if(targetNode) {
+                    const isTargetSubGraph = targetNode.typeId === '_subGraph_';
+                    const isTargetSubGraphClone = targetNode.typeId === '_subGraph_clone_';
 
-                    const inputLink = this.links.find(l => l.srcNodeGuid === inputGraphNode.guid);
-                    linksToRemove.push(inputLink);
-                    linksToRemove.push(link);
-                    
-                    const newLink = GraphLink.parse(JSON.parse(JSON.stringify(link.toJSON())), Graph.currentVersion);
-                    newLink.targetNodeGuid = inputLink.targetNodeGuid;
-                    linksToAdd.push(newLink);
+                    if(isTargetSubGraph || isTargetSubGraphClone) { // convert sub graph input links
+                        const subGraphId = isTargetSubGraph ? targetNode.guid : targetNode.properties.id.value as string;
+                        const suffix = isTargetSubGraphClone ? `-${targetNode.guid}` : '';
+
+                        const inputGraphNode = this.nodes.find(n => n.typeId === '_subGraph_input_' && n.subGraphGUID === subGraphId);
+
+                        const inputLink = this.links.find(l => l.srcNodeGuid === inputGraphNode.guid);
+                        linksToRemove.push(inputLink);
+                        linksToRemove.push(link);
+                        
+                        const newLink = link.clone();
+                        newLink.targetNodeGuid = inputLink.targetNodeGuid + suffix;
+                        linksToAdd.push(newLink);
+                    }
                 }
             }
         }
@@ -423,7 +490,7 @@ export class Graph {
     public createLink(link: GraphLink, typeId: string) {
         const srcNode = this.nodes.find(n => n.guid === link.srcNodeGuid);
 
-        link.setType(srcNode.typeId === '_subGraph_' ? '_subGraph_output_link_' : (srcNode.typeId === '_subGraph_input_' ? '_subGraph_input_link_' : typeId));
+        link.setType(srcNode.typeId === '_subGraph_' || srcNode.typeId === '_subGraph_clone_' ? '_subGraph_output_link_' : (srcNode.typeId === '_subGraph_input_' ? '_subGraph_input_link_' : typeId));
         this.links.push(link);
     }
 
@@ -485,7 +552,7 @@ export abstract class GraphNodeLink {
             for(const propId in commonProps) {
                 const prop = commonProps[propId];
                 
-                if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                if(prop.viewType !== ConfigOptionsPropViewType.Procedural) {
                     properties[propId] = properties[propId] ?? {
                         value: prop.defaultValue
                     };
@@ -498,7 +565,7 @@ export abstract class GraphNodeLink {
         for(const propId in info.properties) {
             const prop = info.properties[propId];
             
-            if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+            if(prop.viewType !== ConfigOptionsPropViewType.Procedural) {
                 properties[propId] = properties[propId] ?? {
                     value: prop.defaultValue
                 };
@@ -515,7 +582,7 @@ export abstract class GraphNodeLink {
                 for(const propId in commonProps) {
                     const prop = commonProps[propId];
                     
-                    if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                    if(prop.viewType !== ConfigOptionsPropViewType.Procedural) {
                         this.properties[propId] = {
                             value: typeof prop.defaultValue === 'string' ? this.parseValue(prop.defaultValue) : prop.defaultValue
                         };
@@ -528,7 +595,7 @@ export abstract class GraphNodeLink {
             for(const propId in info.properties) {
                 const prop = info.properties[propId];
                 
-                if(prop.viewType !== ConfigOptionsPropViewType.GUID) {
+                if(prop.viewType !== ConfigOptionsPropViewType.Procedural) {
                     this.properties[propId] = {
                         value: typeof prop.defaultValue === 'string' ? this.parseValue(prop.defaultValue) : prop.defaultValue
                     };
@@ -623,7 +690,7 @@ export abstract class GraphNodeLink {
     public isPropertyHeightFixed = (propertyKey: string) => {
         const prop = this.type.properties[propertyKey];
 
-        if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List || prop.viewType === ConfigOptionsPropViewType.GUID) {
+        if(prop.viewType === ConfigOptionsPropViewType.Checkbox || prop.viewType === ConfigOptionsPropViewType.List || prop.viewType === ConfigOptionsPropViewType.Procedural) {
             return true;
         } else {
             return prop.isMonoline || prop.nbLines !== undefined;
@@ -683,7 +750,7 @@ export abstract class GraphNodeLink {
             let nbLines: number = undefined;
 
             switch(prop.viewType) {
-                case ConfigOptionsPropViewType.GUID:
+                case ConfigOptionsPropViewType.Procedural:
                 case ConfigOptionsPropViewType.List:
                 case ConfigOptionsPropViewType.Checkbox: {
                     nbLines = 1;
@@ -796,6 +863,13 @@ export class GraphNode extends GraphNodeLink {
             viewport: this.viewport
         }, super.toJSON());
     }
+    
+    public static clone(data: any) {
+        return GraphNode.parse(JSON.parse(JSON.stringify(data)), Graph.currentVersion);
+    }
+    public clone() {
+        return GraphNode.clone(this);
+    }
 }
 
 export class GraphLink extends GraphNodeLink {
@@ -813,6 +887,13 @@ export class GraphLink extends GraphNodeLink {
             srcNodeGuid: this.srcNodeGuid,
             targetNodeGuid: this.targetNodeGuid
         }
+    }
+
+    public static clone(data: any) {
+        return GraphLink.parse(JSON.parse(JSON.stringify(data)), Graph.currentVersion);
+    }
+    public clone() {
+        return GraphLink.clone(this);
     }
 
     get type() {

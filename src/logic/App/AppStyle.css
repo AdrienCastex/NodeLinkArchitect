@@ -327,6 +327,9 @@ polyline {
         color: rgb(33, 37, 41);
         background-color: white;
 }
+.types-switch .types-switch-item:not(:last-child) {
+    border-right: 0.25ch solid white;
+}
 .types-switch .types-switch-item {
     display: inline-block;
     cursor: pointer;

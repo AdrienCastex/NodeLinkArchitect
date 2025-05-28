@@ -8,7 +8,8 @@ const config = {
 				headerPropertyId: 'id', // the property to display between the grab area and the delete btn
 				properties: { // list of properties and their definition
 					id: {
-						viewType: ConfigOptionsPropViewType.GUID // display the GUID of the node (readonly)
+                        value: (nodeLink, graph) => nodeLink.guid, // display the GUID of the node (readonly)
+						viewType: ConfigOptionsPropViewType.Procedural
 					},
 					text: {
 						isMonoline: false, // not on one line

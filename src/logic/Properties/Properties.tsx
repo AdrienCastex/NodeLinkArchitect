@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Graph, GraphNodeLink } from "../Graph";
+import { Graph, GraphNode, GraphNodeLink } from "../Graph";
 import { Editor } from "../Editor";
 import { Config, ConfigOptionsPropViewType } from "../Config";
 import { Form } from "react-bootstrap";
@@ -104,9 +104,9 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
                             }} />
                         </div>;
                     }
-                    case ConfigOptionsPropViewType.GUID: {
+                    case ConfigOptionsPropViewType.Procedural: {
                         return <div className="property monoline" key={key}>
-                            <Form.Control as="textarea" style={entry.style} rows={1} value={nodeLink.guid as string} readOnly={true} />
+                            <Form.Control as="textarea" style={entry.style} rows={1} value={entry.value(nodeLink, Graph.current)} readOnly={true} />
                         </div>;
                     }
                 }

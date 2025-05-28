@@ -708,9 +708,11 @@ export function AppView() {
                         x: undefined,
                         y: undefined
                     };
-                }} openSubGraph={() => {
-                    setCurrentSubGraphGUIDs([ n.guid, ...currentSubGraphGUIDs ]);
-                    forceUpdate();
+                }} openSubGraph={(id: string) => {
+                    if(graph.nodes.some(n => n.guid === id)) {
+                        setCurrentSubGraphGUIDs([ id, ...currentSubGraphGUIDs ]);
+                        forceUpdate();
+                    }
                 }} onDrawingLineEnd={(node) => {
                     if(drawingLine) {
                         if(drawingLine.srcNode !== node && Config.instance.currentLinkMode.hasTargetNode /*&& Graph.current.links.every(link => [link.srcNodeGuid, link.targetNodeGuid].some(guid => ![node.guid, drawingLine.srcNode.guid].includes(guid)))*/) {

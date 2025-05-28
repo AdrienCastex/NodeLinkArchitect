@@ -54,14 +54,15 @@
  */
 
 /**
- * @typedef {Object} IConfigOptionsPropGUID
+ * @typedef {Object} IConfigOptionsPropProcedural
  * @property {React.CSSProperties} [style]
  * @property {string} group - The group of the field.
- * @property {number} viewType - The view type for the simple text. (4: GUID)
+ * @property {((nodeLink: GraphNodeLink, graph: Graph) => string)} value
+ * @property {number} viewType - The view type for the simple text. (4: Procedural)
  */
 
 /**
- * @typedef {IConfigOptionsPropEditor | IConfigOptionsPropCheckbox | IConfigOptionsPropList | IConfigOptionsPropSimpleText | IConfigOptionsPropGUID} IConfigOptionsProp
+ * @typedef {IConfigOptionsPropEditor | IConfigOptionsPropCheckbox | IConfigOptionsPropList | IConfigOptionsPropSimpleText | IConfigOptionsPropProcedural} IConfigOptionsProp
  */
 
 /**
@@ -122,20 +123,20 @@
  * @typedef {Object} Graph
  * @property {string} guid
  * @property {string} lib
- * @property {StoryNode[]} nodes
- * @property {StoryLink[]} links
- * @property {StoryNode[]} flatNodes
- * @property {StoryLink[]} flatLinks
+ * @property {GraphNode[]} nodes
+ * @property {GraphLink[]} links
+ * @property {GraphNode[]} flatNodes
+ * @property {GraphLink[]} flatLinks
  */
 
 /**
- * @typedef {{ [id: string]: { value: string|boolean } }} IStoryProperties
+ * @typedef {{ [id: string]: { value: string|boolean } }} IGraphProperties
  */
 
 /**
- * @typedef {Object} StoryNodeLink
+ * @typedef {Object} GraphNodeLink
  * @property {string} guid
- * @property {IStoryProperties} properties
+ * @property {IGraphProperties} properties
  * @property {string} typeId
  * @property {number} x
  * @property {number} y
@@ -146,16 +147,16 @@
  */
 
 /**
- * @typedef {StoryNodeLink} StoryNode
+ * @typedef {GraphNodeLink} GraphNode
  */
 
 /**
- * @typedef {StoryNodeLink & {
+ * @typedef {GraphNodeLink & {
  *  srcNodeGuid: string
  *  targetNodeGuid: string
  *  type: IConfigOptionsTypeEntry & IConfigOptionsLinkTypeAddon
  *  hasTargetNode: boolean
- *  getSrcNode: (nodes: StoryNode[]) => StoryNode
- *  getTargetNode: (nodes: StoryNode[]) => StoryNode
- * }} StoryLink
+ *  getSrcNode: (nodes: GraphNode[]) => GraphNode
+ *  getTargetNode: (nodes: GraphNode[]) => GraphNode
+ * }} GraphLink
  */

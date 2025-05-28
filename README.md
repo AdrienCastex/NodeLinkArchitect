@@ -15,8 +15,8 @@ This help is visible in the console while on the GUI:
  RMB on canvas: create new entry
  RMB from entry to entry: draw choice
  RMB from entry to canvas: draw choice + create new entry
- CTRL: change node modes
- CTRL + SHIFT: change link modes
+ 0-9: change node mode
+ 0-9 + SHIFT: change link mode
  LMB: area selection
  LMB + SHIFT: area selection - additive
  LMB + CTRL: area selection - exclusive
@@ -46,7 +46,8 @@ const config = {
 				headerPropertyId: 'id', // the property to display between the grab area and the delete btn
 				properties: { // list of properties and their definition
 					id: {
-						viewType: ConfigOptionsPropViewType.GUID // display the GUID of the node (readonly)
+                        value: (nodeLink, graph) => nodeLink.guid, // display the GUID of the node (readonly)
+						viewType: ConfigOptionsPropViewType.Procedural
 					},
 					text: {
 						isMonoline: false, // not on one line

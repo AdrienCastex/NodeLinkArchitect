@@ -1,4 +1,4 @@
-import { Graph } from "./Graph";
+import { Graph, GraphNode, GraphNodeLink } from "./Graph";
 
 export interface IConfigOptionsLang {
     /**
@@ -17,7 +17,7 @@ export enum ConfigOptionsPropViewType {
     Checkbox,
     List,
     SimpleText,
-    GUID
+    Procedural
 }
 
 (window as any).ConfigOptionsPropViewType = ConfigOptionsPropViewType;
@@ -63,7 +63,8 @@ export interface IConfigOptionsPropSimpleText {
 }
 export interface IConfigOptionsPropGUID {
     style?: React.CSSProperties,
-    viewType: ConfigOptionsPropViewType.GUID
+    value: (nodeLink: GraphNodeLink, graph: Graph) => string
+    viewType: ConfigOptionsPropViewType.Procedural
     group?: string
 }
 
@@ -141,13 +142,22 @@ export class Config {
         result.types = Object.assign({
             _subGraph_: {
                 name: 'Sub graph',
-                headerPropertyId: 'name',
+                headerPropertyId: 'id',
                 defaultSize: {
                     width: 318,
                     height: 0
                 },
                 nbOutputsMax: 1,
                 properties: {
+                    id: {
+                        isMonoline: true,
+                        placeholder: "ID",
+                        type: "string",
+                        defaultValue: `"{_guid_}"`,
+                        valueOnEmpty: `"{_guid_}"`,
+                        value: (nodeLink) => nodeLink.guid,
+                        viewType: ConfigOptionsPropViewType.Procedural
+                    },
                     name: {
                         isMonoline: true,
                         placeholder: 'Name',
@@ -177,6 +187,30 @@ export class Config {
                 nbOutputsMax: 0,
                 isVisible: false,
                 style: graphStyle
+            },
+            _subGraph_clone_: {
+                name: 'Sub graph:clone',
+                headerPropertyId: 'id',
+                defaultSize: {
+                    width: 318,
+                    height: 0
+                },
+                nbOutputsMax: 1,
+                properties: {
+                    id: {
+                        isMonoline: true,
+                        placeholder: 'ID',
+                        viewType: ConfigOptionsPropViewType.SimpleText
+                    },
+                    name: {
+                        isMonoline: true,
+                        value: (node, graph) => (node.properties.id.value ? graph.nodes.find(n => n.guid === node.properties.id.value)?.properties?.name?.value : undefined) ?? '- not found -',
+                        viewType: ConfigOptionsPropViewType.Procedural
+                    },
+                },
+                style: Object.assign({}, graphStyle, {
+                    borderColor: '#fd8398',
+                })
             },
         } as IConfigOptionsType, result.types);
 

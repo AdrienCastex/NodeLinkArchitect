@@ -16,8 +16,8 @@ let root: ReactDOMClient.Root;
  RMB on canvas: create new entry
  RMB from entry to entry: draw choice
  RMB from entry to canvas: draw choice + create new entry
- CTRL: change node modes
- CTRL + SHIFT: change link modes
+ 0-9: change node mode
+ 0-9 + SHIFT: change link mode
  LMB: area selection
  LMB + SHIFT: area selection - additive
  LMB + CTRL: area selection - exclusive
@@ -55,16 +55,24 @@ let root: ReactDOMClient.Root;
 		};
 	
 		document.addEventListener('keydown', async (e) => {
-			if(e.key.toUpperCase() === 'CONTROL') {
+			if(e.code.toLowerCase().startsWith('digit')) {
+				e.stopPropagation();
+				e.preventDefault();
+
+				let index = parseInt(e.code.substring('digit'.length)) - 1;
+				if(index < 0) {
+					index = 10;
+				}
+
 				if(e.shiftKey)
 				{
 					const list = Object.keys(Config.instance.links.types).filter(e => Config.instance.links.types[e].isVisible !== false);
-					Config.instance.currentLinkModeId = list[(list.indexOf(Config.instance.currentLinkModeId) + 1) % list.length];
+					Config.instance.currentLinkModeId = list[Math.min(index, list.length - 1)];
 				}
 				else
 				{
 					const list = Object.keys(Config.instance.nodes.types).filter(e => Config.instance.nodes.types[e].isVisible !== false);
-					Config.instance.currentNodeModeId = list[(list.indexOf(Config.instance.currentNodeModeId) + 1) % list.length];
+					Config.instance.currentNodeModeId = list[Math.min(index, list.length - 1)];
 				}
 
 				updateView();
@@ -222,7 +230,8 @@ let root: ReactDOMClient.Root;
 				headerPropertyId: 'id',
 				properties: {
 					id: {
-						viewType: ConfigOptionsPropViewType.GUID
+						value: (e) => e.guid,
+						viewType: ConfigOptionsPropViewType.Procedural
 					},
 					text: {
 						isMonoline: false,

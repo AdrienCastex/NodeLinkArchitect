@@ -4,14 +4,15 @@ import "./StoryNodeStyle";
 import { Viewport } from "../Viewport";
 import { Properties } from "../Properties/Properties";
 
-export function StoryNodeView(props: { forceUpdate: () => void, isSelected: boolean, node: GraphNode, openSubGraph(): void, deleteNode(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void, onDrawingLineStart(node: GraphNode): void, onDrawingLineEnd(node: GraphNode): void }) {
+export function StoryNodeView(props: { forceUpdate: () => void, isSelected: boolean, node: GraphNode, openSubGraph(id: string): void, deleteNode(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void, onDrawingLineStart(node: GraphNode): void, onDrawingLineEnd(node: GraphNode): void }) {
     const node = props.node;
 
     const viewport = Viewport.instance;
 
     const isHeightResizable = node.isHeightResizable;
 
-    const isSubGraph = node.typeId === '_subGraph_';
+    const isSubGraphClone = node.typeId === '_subGraph_clone_';
+    const isSubGraph = isSubGraphClone || node.typeId === '_subGraph_';
     const isSubGraphInputOutput = !isSubGraph && node.typeId.startsWith('_subGraph_');
 
     return <div className={"graph-node " + (props.isSelected ? 'selected' : '')} style={Object.assign({}, node.type.style ?? {}, { top: node.y + viewport.y, left: node.x + viewport.x, width: node.width, height: node.height })} onMouseUp={(e) => {
@@ -63,7 +64,7 @@ export function StoryNodeView(props: { forceUpdate: () => void, isSelected: bool
                             <div>::</div>
                         </td>
                         <td><Properties isHeader={true} properties={[node.type.headerPropertyId]} nodeLink={node} forceUpdate={props.forceUpdate} /></td>
-                        {isSubGraph ? <td><div className="open-subgraph-btn" onClick={() => props.openSubGraph()}>Open</div></td> : undefined}
+                        {isSubGraph || isSubGraphClone ? <td><div className="open-subgraph-btn" onClick={() => props.openSubGraph(isSubGraphClone ? node.properties.id.value as string : node.guid)}>Open</div></td> : undefined}
                         <td className="remove-btn" onClick={(e) => props.deleteNode(e.ctrlKey)}><div>x</div></td>
                     </tr>
                 </tbody>
