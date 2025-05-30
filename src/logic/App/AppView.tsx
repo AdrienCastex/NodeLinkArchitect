@@ -338,6 +338,28 @@ export function AppView() {
             }));
 
             setCurrentDragging(() => (e, dragStart) => {
+                const posPercent = {
+                    x: e.x * viewport.scale / window.innerWidth,
+                    y: e.y * viewport.scale / window.innerHeight
+                };
+
+                const percentDistance = 0.03;
+                const viewportDrag = {
+                    x: posPercent.x < percentDistance ? 1 : posPercent.x > 1 - percentDistance ? -1 : 0,
+                    y: posPercent.y < percentDistance ? 1 : posPercent.y > 1 - percentDistance ? -1 : 0,
+                };
+                if(viewportDrag.x !== 0 || viewportDrag.y !== 0) { // normalization
+                    const length = Math.sqrt(viewportDrag.x * viewportDrag.x + viewportDrag.y * viewportDrag.y);
+                    viewportDrag.x /= length;
+                    viewportDrag.y /= length;
+
+                    scrollViewport.x = viewportDrag.x;
+                    scrollViewport.y = viewportDrag.y;
+                } else {
+                    scrollViewport.x = 0;
+                    scrollViewport.y = 0;
+                }
+
                 for(let i = 0; i < element.length; ++i) {
                     const node = element[i];
                     const initialPos = initialPositions[i];
@@ -358,9 +380,8 @@ export function AppView() {
                 y: e.clientY / viewport.scale,
             };
 
-            const dragStartValue = dragStart ?? point;
             if(!dragStart) {
-                dragStart = dragStartValue;
+                dragStart = point;
             }
 
             currentDragging(point, dragStart);
@@ -374,6 +395,9 @@ export function AppView() {
     }} onMouseUp={(e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        scrollViewport.x = 0;
+        scrollViewport.y = 0;
 
         if(currentDragging) {
             dragStart = undefined;
@@ -407,7 +431,7 @@ export function AppView() {
             forceUpdate();
         }
     }} onMouseDown={(e) => {
-        if(e.button === 2) { // RMB => create node
+        if(e.button === 2 && !e.shiftKey && !e.ctrlKey) { // RMB => create node
             e.stopPropagation();
             e.preventDefault();
 
@@ -420,7 +444,10 @@ export function AppView() {
             graph.saveHistory();
 
             forceUpdate();
-        } else if(e.button === 1) { // MMB => move viewport
+        } else if(e.button === 1 || e.button === 2 && (e.shiftKey || e.ctrlKey)) { // MMB => move viewport
+            e.stopPropagation();
+            e.preventDefault();
+
             const initialPos = {
                 x: viewport.x,
                 y: viewport.y
@@ -499,80 +526,29 @@ export function AppView() {
         const mouseX = e.clientX;
         const mouseY = e.clientY;
 
-        viewport.x -= mouseX / oldScale - mouseX / newScale;
-        viewport.y -= mouseY / oldScale - mouseY / newScale;
+        const change = {
+            x: mouseX / oldScale - mouseX / newScale,
+            y: mouseY / oldScale - mouseY / newScale,
+        }
+
+        viewport.x -= change.x;
+        viewport.y -= change.y;
+
+        if(dragStart) {
+            dragStart.x -= change.x;
+            dragStart.y -= change.y;
+        }
 
         e.stopPropagation();
         e.preventDefault();
         forceUpdate();
-    }} onContextMenu={(e) => e.preventDefault()} onKeyDown={(e) => {
+    }} onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }} onKeyDown={(e) => {
         e.stopPropagation();
     }}>
-        <div className="bottom-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.y = -1;
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.y = 0;
-        }}></div>
-        <div className="top-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.y = 1;
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.y = 0;
-        }}></div>
-        <div className="left-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.x = 1;
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.x = 0;
-        }}></div>
-        <div className="right-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.x = -1;
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.x = 0;
-        }}></div>
-        <div className="top-right-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.x = -Math.sqrt(1/2);
-                scrollViewport.y = Math.sqrt(1/2);
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.x = 0;
-            scrollViewport.y = 0;
-        }}></div>
-        <div className="bottom-right-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.x = -Math.sqrt(1/2);
-                scrollViewport.y = -Math.sqrt(1/2);
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.x = 0;
-            scrollViewport.y = 0;
-        }}></div>
-        <div className="top-left-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.x = Math.sqrt(1/2);
-                scrollViewport.y = Math.sqrt(1/2);
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.x = 0;
-            scrollViewport.y = 0;
-        }}></div>
-        <div className="bottom-left-max" onMouseEnter={(e) => {
-            if(e.buttons === 2 || e.buttons === 1) {
-                scrollViewport.x = Math.sqrt(1/2);
-                scrollViewport.y = -Math.sqrt(1/2);
-            }
-        }} onMouseLeave={() => {
-            scrollViewport.x = 0;
-            scrollViewport.y = 0;
-        }}></div>
-        
         {currentSubGraphGUIDs.length > 0 ? <div className="sub-graph-controls" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
             <button onClick={() => setCurrentSubGraphGUIDs(currentSubGraphGUIDs.slice(1))}>{'<'} Exit sub-graph {currentSubGraphGUIDs.map(guid => graph.nodes.find(n => n.guid === guid).properties.name.value ?? '').reverse().join(' / ')}</button>
         </div> : undefined}

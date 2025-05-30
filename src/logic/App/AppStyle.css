@@ -76,6 +76,7 @@ input:not([type="checkbox"]) {
 
 .open-subgraph-btn {
     display: inline-block;
+    line-height: 1.5em;
 }
 .remove-btn {
     text-align: right;
@@ -183,6 +184,7 @@ polyline {
     position: fixed;
     /*background-color: #ffffff0d;*/
     z-index: 1000;
+    pointer-events: none;
 }
 .bottom-max {
     bottom: 0px;

@@ -12,6 +12,8 @@ This help is visible in the console while on the GUI:
 ```
 == HELP ==
  MMB: move canvas
+ CTRL + RMB: move canvas
+ SHIFT + RMB: move canvas
  RMB on canvas: create new entry
  RMB from entry to entry: draw choice
  RMB from entry to canvas: draw choice + create new entry

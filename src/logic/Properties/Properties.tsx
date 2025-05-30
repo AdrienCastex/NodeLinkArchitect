@@ -106,7 +106,12 @@ export function Properties(props: { isHeader: boolean, properties: string[]; exc
                     }
                     case ConfigOptionsPropViewType.Procedural: {
                         return <div className="property monoline" key={key}>
-                            <Form.Control as="textarea" style={entry.style} rows={1} value={entry.value(nodeLink, Graph.current)} readOnly={true} />
+                            <Form.Control as="textarea" style={entry.style} rows={1} value={entry.value(nodeLink, Graph.current)} readOnly={true} onKeyDown={e => {
+                                if(e.ctrlKey && e.key.toLowerCase() === 's') {
+                                    e.preventDefault();
+                                    Graph.current.save(saveLoadServerUrl);
+                                }
+                            }} />
                         </div>;
                     }
                 }

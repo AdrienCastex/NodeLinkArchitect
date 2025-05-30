@@ -21,7 +21,7 @@ export function GraphTree(props: { tree: IGraphTree, currentSubGraphGUIDs: strin
             onClick={() => {
                 props.onChangeCurrentSubGraphGUIDs(props.tree.hierarchicalPath.slice(1).reverse());
             }}>
-            {props.tree.graphNode ? props.tree.graphNode.properties.name.value : 'root'}
+            {props.tree.graphNode ? props.tree.graphNode.properties.name.value ?? '- no name -' : 'root'}
         </div>
         <div className="graph-tree-sub">{props.tree.graphs.map(e => <GraphTree currentSubGraphGUIDs={props.currentSubGraphGUIDs} key={e.graphNode.guid} tree={e} onChangeCurrentSubGraphGUIDs={props.onChangeCurrentSubGraphGUIDs} />)}</div>
     </div>;
