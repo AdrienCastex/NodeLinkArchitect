@@ -13,6 +13,8 @@ let root: ReactDOMClient.Root;
 	if(!root) {
 		console.log(`== HELP ==
  MMB: move canvas
+ CTRL + RMB: move canvas
+ SHIFT + RMB: move canvas
  RMB on canvas: create new entry
  RMB from entry to entry: draw choice
  RMB from entry to canvas: draw choice + create new entry

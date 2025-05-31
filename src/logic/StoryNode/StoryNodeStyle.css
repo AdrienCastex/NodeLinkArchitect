@@ -23,7 +23,7 @@
     box-shadow: 0px 0px 10px #ff00f2;
 }
 
-.graph-node input,
+.graph-node input:not([type=checkbox]),
 .graph-node textarea {
     width: 100%;
 
