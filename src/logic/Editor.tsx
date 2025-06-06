@@ -1,4 +1,4 @@
-import React, { Ref, useEffect, useRef } from "react";
+import React, { Ref, useEffect, useId, useRef } from "react";
 import * as monaco from 'monaco-editor';
 import { monacoEditorOptionsBase } from "./monacoEditorOptionsBase";
 import { Graph } from "./Graph";
@@ -20,17 +20,19 @@ export interface ICreateEditorOptions {
     overrideConfig?: monaco.editor.IStandaloneEditorConstructionOptions
     lib?: string
     onSaveRequest: { ref: () => void }
+    id: string
 }
 
 export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
     if(!options.domElement) {
         return undefined;
     }
-
+/*
     if(!options.domElement.hasAttribute("editorId")) {
         options.domElement.setAttribute("editorId", Math.random().toString().replace("0.", "") + Date.now().toString());
     }
-    const id = options.domElement.getAttribute("editorId");
+    const id = options.domElement.getAttribute("editorId");*/
+    const id = options.id.replace(/:/img, '');
 
     const lineCtx: IConfigOptionsCodeWrapperCtx = {
         id: id,
@@ -42,7 +44,12 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     const after = options.skipConfig ? (options.codeAfter ?? '') : (options.codeAfter ?? '') + Config.instance.afterCode(lineCtx);
     const code = (before ? (before + '\n') : '') + (options.code ?? '') + (after ? ('\n' + after) : '');
 
-    const model = monaco.editor.createModel(code, options.language ?? "typescript", monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`));
+    const uri = monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`);
+    /*let model = monaco.editor.getModels().find(m => m.uri.toString() === uri.toString());
+    if(!model || model.isDisposed()) {
+        model = monaco.editor.createModel(code, options.language ?? "typescript", uri);
+    }*/
+    const model = monaco.editor.createModel(code, options.language ?? "typescript", uri);
 
     const editor = monaco.editor.create(options.domElement, {
         ...monacoEditorOptionsBase,
@@ -62,13 +69,14 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
     const jsxHighlighter = jsxController.highlighterBuilder({
         editor: editor,
+        filePath: uri.toString()
     })
     
     jsxHighlighter.highlighter();
 
     editor.onDidDispose(() => {
-        model.dispose();
         jsxHighlighter.dispose();
+        model.dispose();
     });
 
     editor.onDidFocusEditorText(() => {
@@ -173,7 +181,10 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
 
     let skipOnChange = false;
     editor.onDidChangeModelContent(() => {
-        jsxHighlighter.highlighter();
+        const model = editor.getModel();
+        if(model && !model.isDisposed()) {
+            jsxHighlighter.highlighter();
+        }
 
         if(skipOnChange) {
             skipOnChange = false;
@@ -194,6 +205,7 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
 }
 
 const viewStates: { [guid: string]: monaco.editor.ICodeEditorViewState } = {};
+const pendingLoadings: { [guid: string]: NodeJS.Timeout } = {};
 
 export function Editor(props: {
     className?: string
@@ -206,21 +218,55 @@ export function Editor(props: {
     overrideConfig?: monaco.editor.IStandaloneEditorConstructionOptions
     lib?: string
     viewStateGUID?: string
-} & Omit<ICreateEditorOptions, "domElement">) {
+} & Omit<Omit<ICreateEditorOptions, "domElement">, "id">) {
     const ref = useRef<HTMLDivElement>();
     const editor = useRef<monaco.editor.IStandaloneCodeEditor>(undefined);
+
+    const id = useId();
 
     useEffect(() => {
         if(editor.current) {
             const viewState = editor.current.saveViewState();
 
             editor.current.dispose();
-            editor.current = createEditor({
-                ...props,
-                domElement: ref.current
-            });
+            
+            if(pendingLoadings[id]) {
+                clearTimeout(pendingLoadings[id]);
+                delete pendingLoadings[id];
+            }
+            
+            pendingLoadings[id] = setTimeout(() => {
+                delete pendingLoadings[id];
 
-            editor.current.restoreViewState(viewState);
+                editor.current = createEditor({
+                    ...props,
+                    domElement: ref.current,
+                    id: id
+                });
+
+                editor.current.restoreViewState(viewState);
+            });
+        } else if(!pendingLoadings[id]) {
+            pendingLoadings[id] = setTimeout(() => {
+                delete pendingLoadings[id];
+
+                editor.current = createEditor({
+                    ...props,
+                    domElement: ref.current,
+                    id: id
+                });
+                
+                if(props.viewStateGUID && viewStates[props.viewStateGUID]) {
+                    editor.current.restoreViewState(viewStates[props.viewStateGUID]);
+                }
+            });
+        }
+
+        return () => {
+            if(pendingLoadings[id]) {
+                clearTimeout(pendingLoadings[id]);
+                delete pendingLoadings[id];
+            }
         }
     }, [Config.instance]);
 
@@ -229,17 +275,32 @@ export function Editor(props: {
             editor.current.dispose();
             editor.current = undefined;
         }
-
-        editor.current = createEditor({
-            ...props,
-            domElement: ref.current
-        });
         
-        if(props.viewStateGUID && viewStates[props.viewStateGUID]) {
-            editor.current.restoreViewState(viewStates[props.viewStateGUID]);
+        if(pendingLoadings[id]) {
+            clearTimeout(pendingLoadings[id]);
+            delete pendingLoadings[id];
         }
 
+        pendingLoadings[id] = setTimeout(() => {
+            delete pendingLoadings[id];
+
+            editor.current = createEditor({
+                ...props,
+                domElement: ref.current,
+                id: id
+            });
+            
+            if(props.viewStateGUID && viewStates[props.viewStateGUID]) {
+                editor.current.restoreViewState(viewStates[props.viewStateGUID]);
+            }
+        });
+
         return () => {
+            if(pendingLoadings[id]) {
+                clearTimeout(pendingLoadings[id]);
+                delete pendingLoadings[id];
+            }
+
             if(editor.current) {
                 if(props.viewStateGUID) {
                     viewStates[props.viewStateGUID] = editor.current.saveViewState();
