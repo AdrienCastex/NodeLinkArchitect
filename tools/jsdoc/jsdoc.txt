@@ -125,6 +125,7 @@
  * @property {string} lib
  * @property {GraphNode[]} nodes
  * @property {GraphLink[]} links
+ * @property {{ nodes: GraphNode[], links: GraphLink[] }} flatNodesLinks
  * @property {GraphNode[]} flatNodes
  * @property {GraphLink[]} flatLinks
  */

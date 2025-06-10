@@ -353,8 +353,90 @@ export class Graph {
     public get subGraphCloneNodes() {
         return this.nodes.filter(n => n.typeId === '_subGraph_clone_');
     }
+
+    public getFlatNodesLinks(parentGUID: string, prefix: string) {
+        const result = {
+            nodes: [] as GraphNode[],
+            links: [] as GraphLink[],
+        };
+
+        const mapping: { [originalGuid: string]: string } = {};
+
+        for(const node of this.nodes) {
+            if(node.subGraphGUID === parentGUID) {
+                if(node.typeId.startsWith('_subGraph_')) {
+                    if(node.typeId === '_subGraph_' || node.typeId === '_subGraph_clone_') {
+                        const subGraphGUID = node.typeId === '_subGraph_' ? node.guid : node.properties.id.value as string;
+                        
+                        const subGraph = this.getFlatNodesLinks(subGraphGUID, `${prefix}-${node.guid}`);
+                        result.nodes.push(...subGraph.nodes);
+                        result.links.push(...subGraph.links);
+                    }
+                } else {
+                    const newNode = node.clone();
+                    newNode.guid = `${prefix}-${newNode.guid}`;
+                    result.nodes.push(newNode);
+                    
+                    mapping[node.guid] = newNode.guid;
+                }
+            }
+        }
+
+        const makeLink = (link: GraphLink, newLink: GraphLink) => {
+            if(link.hasTargetNode) {
+                const targetNode = link.getTargetNode(this.nodes);
+
+                if(targetNode.typeId === '_subGraph_output_') {
+                    return;
+                } else if(targetNode.typeId === '_subGraph_' || targetNode.typeId === '_subGraph_clone_') {
+                    const subGraphGUID = targetNode.typeId === '_subGraph_' ? targetNode.guid : targetNode.properties.id.value as string;
+                    
+                    const inputNode = this.nodes.find(n => n.subGraphGUID === subGraphGUID && n.typeId === '_subGraph_input_');
+                    const inputNodeTargetGuid = this.links.find(l => l.srcNodeGuid === inputNode.guid).targetNodeGuid;
+                    newLink.targetNodeGuid = `${prefix}-${targetNode.guid}-${inputNodeTargetGuid}`;
+                } else {
+                    newLink.targetNodeGuid = mapping[link.targetNodeGuid];
+                }
+            }
+
+            result.links.push(newLink);
+        }
+
+        for(const link of this.links) {
+            const srcNode = link.getSrcNode(this.nodes);
+
+            if(srcNode.subGraphGUID === parentGUID) {
+                if(srcNode.typeId === '_subGraph_input_') {
+                    continue;
+                } else if(srcNode.typeId === '_subGraph_' || srcNode.typeId === '_subGraph_clone_') {
+                    const subGraphGUID = srcNode.typeId === '_subGraph_' ? srcNode.guid : srcNode.properties.id.value as string;
+                    
+                    const outputNode = this.nodes.find(n => n.subGraphGUID === subGraphGUID && n.typeId === '_subGraph_output_');
+                    const outputLinks = this.links.filter(l => l.targetNodeGuid === outputNode.guid);
+
+                    for(const outputLink of outputLinks) {
+                        const newLink = outputLink.clone();
+                        newLink.guid = `${prefix}-${srcNode.guid}-${link.guid}`;
+                        newLink.srcNodeGuid = `${prefix}-${srcNode.guid}-${outputLink.srcNodeGuid}`;
+                        makeLink(link, newLink);
+                    }
+                } else {
+                    const newLink = link.clone();
+                    newLink.guid = `${prefix}-${link.guid}`;
+                    newLink.srcNodeGuid = mapping[link.srcNodeGuid];
+                    makeLink(link, newLink);
+                }
+            }
+        }
+
+        return result;
+    }
+    public get flatNodesLinks() {
+        return this.getFlatNodesLinks(undefined, '');
+    }
     
     public get flatNodes() {
+        return this.flatNodesLinks.nodes;
         const nodes: GraphNode[] = [];
 
         for(const node of this.nodes) {
@@ -378,6 +460,7 @@ export class Graph {
         return nodes;
     }
     public get flatLinks() {
+        return this.flatNodesLinks.links;
         const linksToRemove: GraphLink[] = [];
         const linksToAdd: GraphLink[] = [];
 

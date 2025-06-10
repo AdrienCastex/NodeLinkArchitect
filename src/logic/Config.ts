@@ -1,4 +1,4 @@
-import { Graph, GraphNode, GraphNodeLink } from "./Graph";
+import { Graph, GraphNodeLink } from "./Graph";
 
 export interface IConfigOptionsLang {
     /**

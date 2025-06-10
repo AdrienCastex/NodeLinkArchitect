@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOMClient from 'react-dom/client';
-import { AppView, currentSubGraphGuid, save, saveLoadServerUrl, selectedLinks, selectedNodes, updateView } from "./logic/App/AppView";
+import { AppView, currentSubGraphGuid, save, selectedLinks, selectedNodes, updateView } from "./logic/App/AppView";
 import { Graph, GraphNode } from "./logic/Graph";
 import { Config, ConfigOptionsPropViewType, IConfigOptions } from "./logic/Config";
 import { Viewport } from "./logic/Viewport";
