@@ -157,27 +157,33 @@ export class Graph {
     }
 
     public save(serverUrl: string) {
-        const code = this.toJS();
-        localStorage.setItem('code', code);
+        return new Promise<void>((resolve, reject) => {
+            try {
+                const code = this.toJS();
+                localStorage.setItem('code', code);
 
-        if(serverUrl) {
-            if(!serverUrl.includes('://')) {
-                serverUrl = `http://${serverUrl}`;
-            }
+                if(serverUrl) {
+                    if(!serverUrl.includes('://')) {
+                        serverUrl = `http://${serverUrl}`;
+                    }
 
-            return fetch(serverUrl, {
-                method: "POST",
-                body: JSON.stringify({
-                    graph: this.toJSON(),
-                    code: code
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
+                    fetch(serverUrl, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            graph: this.toJSON(),
+                            code: code
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(() => resolve()).catch(reject);
+                } else {
+                    navigator.clipboard.writeText(code).then(() => resolve()).catch(reject);
                 }
-            });
-        } else {
-            return navigator.clipboard.writeText(code);
-        }
+            } catch(ex) {
+                reject(ex);
+            }
+        })
     }
 
     public undo() {

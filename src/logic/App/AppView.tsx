@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Graph, GraphLink, GraphNode, GraphNodeLink } from "../Graph";
 import { StoryNodeView } from "../StoryNode/StoryNodeView";
 import "./AppStyle";
@@ -208,7 +208,9 @@ export function AppView() {
                 currentSavingEntry.status = 'done';
                 forceUpdate();
             })
-            .catch(() => {
+            .catch((e) => {
+                console.error(e);
+
                 currentSavingEntry.status = 'error';
                 forceUpdate();
             })
@@ -742,7 +744,7 @@ export function AppView() {
             <SideButton
                 onClick={save}
                 desc={<>Generate code to [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}
-                sideItems={saving.map((e, i) => <div className="" key={i}>{e.status === 'pending' ? <span className="spinning">⟳</span> : e.status === 'done' ? '🗸' : '✖'}</div>)}
+                sideItems={saving.map((e, i) => <div className={`save-status-${e.status}`} key={i}>{e.status === 'pending' ? <span className="spinning">⟳</span> : e.status === 'done' ? '🗸' : '✖'}</div>)}
             >Data 🖪</SideButton>
 
             <SideButton

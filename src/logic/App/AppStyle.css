@@ -399,3 +399,8 @@ polyline {
     animation: spin 2s linear infinite;
     display: inline-block;
 }
+
+.save-status-error {
+    color: red;
+    text-shadow: 0px 0px 10px black;
+}
