@@ -147,10 +147,12 @@ export const updateView = () => scrollViewport?.refresh();
 
 setInterval(() => {
     if(scrollViewport.x !== 0 || scrollViewport.y !== 0) {
-        const speed = (window as any).settings.viewportSpeed / Viewport.instance.scale;
+        const viewport = Viewport.instance.viewport;
 
-        Viewport.instance.x += scrollViewport.x * speed;
-        Viewport.instance.y += scrollViewport.y * speed;
+        const speed = (window as any).settings.viewportSpeed / viewport.scale;
+
+        viewport.x += scrollViewport.x * speed;
+        viewport.y += scrollViewport.y * speed;
 
         if(dragStart) {
             dragStart.x += scrollViewport.x * speed;
@@ -295,7 +297,7 @@ export function AppView() {
         }*/
     }
     
-    const viewport = Viewport.instance;
+    const viewport = Viewport.instance.viewport;
 
     useEffect(() => {
         currentSubGraphGuid = currentSubGraphGUIDs[0];
@@ -496,7 +498,7 @@ export function AppView() {
                 }
 
                 const tempSelectedNodes = graph.nodes.filter(n => n.subGraphGUID === currentSubGraphGUIDs[0]).filter(n => !(n.x > area.x + area.w || n.x + n.width < area.x || n.y > area.y + area.h || n.y + n.height < area.y));
-                const tempSelectedLinks = graph.links.filter(l => l.getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).filter(n => !n.hasTargetNode && !(n.x > area.x + area.w || n.x + n.width < area.x || n.y > area.y + area.h || n.y + n.height < area.y));
+                const tempSelectedLinks = graph.links.filter(l => l.subGraphGUID === currentSubGraphGUIDs[0]).filter(n => !n.hasTargetNode && !(n.x > area.x + area.w || n.x + n.width < area.x || n.y > area.y + area.h || n.y + n.height < area.y));
 
                 if(exclusionMode) {
                     selectedNodes = tempSelectedNodes.filter(e => !previouslySelectedNodes.includes(e));
@@ -558,167 +560,171 @@ export function AppView() {
         <div className="viewport-content" style={{ transform: `scale(${viewport.scale})` }}>
             {!selectionArea ? undefined : <div className="selection-area" style={{ left: selectionArea.x + viewport.x, top: selectionArea.y + viewport.y, width: selectionArea.w, height: selectionArea.h, borderWidth: `${3 / viewport.scale}px` }} />}
 
-            {graph && graph === Graph.current ? <>
-                {graph.groupedLinks.filter(l => l[0].getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map(links => links.map((l, i) => {
+            {graph && graph === Graph.current ? (() => {
+                const groupedLinks = Graph.groupLinks(graph.links, l => l.subGraphGUID === currentSubGraphGUIDs[0]);
 
-                    if(!l.hasTargetNode) {
-                        const srcNode = l.getSrcNode(graph.nodes);
-                        const targetNode = l.getTargetNode(graph.nodes);
-
-                        const getPoint = (srcNode: GraphNodeLink) => ({
-                            x: srcNode.x + srcNode.width / 2 + viewport.x,
-                            y: srcNode.y + srcNode.height / 2 + viewport.y
-                        });
-                        const getRect = (targetNode: GraphNodeLink) => ({
-                            min: {
-                                x: targetNode.x + viewport.x,
-                                y: targetNode.y + viewport.y,
-                            },
-                            max: {
-                                x: targetNode.x + targetNode.width + viewport.x,
-                                y: targetNode.y + targetNode.height + viewport.y,
-                            },
-                        });
-
-                        const findClosestPoint = (p: {x: number, y: number}, rect: { min: {x: number, y:number}, max: {x: number, y:number} }) => {
-                            let dx = Math.max(rect.min.x - p.x, 0, p.x - rect.max.x);
-                            let dy = Math.max(rect.min.y - p.y, 0, p.y - rect.max.y);
-
-                            if(p.x > rect.min.x) {
-                                dx *= -1;
-                            }
-                            if(p.y > rect.min.y) {
-                                dy *= -1;
-                            }
-
-                            return {
-                                x: p.x + dx,
-                                y: p.y + dy
-                            }
-                        }
-                        
-                        const rect = l.hasTargetNode ? getRect(targetNode) : getRect(l);
-                        
-                        const p2 = findClosestPoint(getPoint(l), rect);
-                        const p1 = findClosestPoint(p2, getRect(srcNode));
-                        
-                        return <LinkLine key={l.guid} point1={p1} point2={p2} isSplit={l.hasTargetNode} />
-                    } else {
-                        const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
-
-                        const srcNode = l.getSrcNode(graph.nodes);
-                        const point1 = { x: srcNode.x + (l.hasTargetNode ? getStep(srcNode) : 0) + viewport.x, y: srcNode.height + srcNode.y + viewport.y };
-                        let point2: { x: number, y: number };
+                return <>
+                    {groupedLinks.map(links => links.map((l, i) => {
 
                         if(!l.hasTargetNode) {
-                            point2 = {
-                                x: l.x + l.width / 2 + viewport.x,
-                                y: l.y + viewport.y
+                            const srcNode = l.getSrcNode(graph.nodes);
+                            const targetNode = l.getTargetNode(graph.nodes);
+
+                            const getPoint = (srcNode: GraphNodeLink) => ({
+                                x: srcNode.x + srcNode.width / 2 + viewport.x,
+                                y: srcNode.y + srcNode.height / 2 + viewport.y
+                            });
+                            const getRect = (targetNode: GraphNodeLink) => ({
+                                min: {
+                                    x: targetNode.x + viewport.x,
+                                    y: targetNode.y + viewport.y,
+                                },
+                                max: {
+                                    x: targetNode.x + targetNode.width + viewport.x,
+                                    y: targetNode.y + targetNode.height + viewport.y,
+                                },
+                            });
+
+                            const findClosestPoint = (p: {x: number, y: number}, rect: { min: {x: number, y:number}, max: {x: number, y:number} }) => {
+                                let dx = Math.max(rect.min.x - p.x, 0, p.x - rect.max.x);
+                                let dy = Math.max(rect.min.y - p.y, 0, p.y - rect.max.y);
+
+                                if(p.x > rect.min.x) {
+                                    dx *= -1;
+                                }
+                                if(p.y > rect.min.y) {
+                                    dy *= -1;
+                                }
+
+                                return {
+                                    x: p.x + dx,
+                                    y: p.y + dy
+                                }
+                            }
+                            
+                            const rect = l.hasTargetNode ? getRect(targetNode) : getRect(l);
+                            
+                            const p2 = findClosestPoint(getPoint(l), rect);
+                            const p1 = findClosestPoint(p2, getRect(srcNode));
+                            
+                            return <LinkLine key={l.guid} point1={p1} point2={p2} isSplit={l.hasTargetNode} />
+                        } else {
+                            const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
+
+                            const srcNode = l.getSrcNode(graph.nodes);
+                            const point1 = { x: srcNode.x + (l.hasTargetNode ? getStep(srcNode) : 0) + viewport.x, y: srcNode.height + srcNode.y + viewport.y };
+                            let point2: { x: number, y: number };
+
+                            if(!l.hasTargetNode) {
+                                point2 = {
+                                    x: l.x + l.width / 2 + viewport.x,
+                                    y: l.y + viewport.y
+                                };
+                            } else {
+                                const targetNode = l.getTargetNode(graph.nodes);
+                                point2 = { x: targetNode.x + getStep(targetNode) + viewport.x, y: targetNode.y + viewport.y };
+                            }
+                            
+                            return <LinkLine key={l.guid} point1={point1} point2={point2} isSplit={l.hasTargetNode} />
+                        }
+                    }))}
+
+                    {groupedLinks.map(links => links.map((l, i) => {
+                        let offset: { x: number, y: number };
+
+                        if(l.hasTargetNode) {
+                            const spacing = 5;
+                            const totalSizeY = links.reduce((p, c) => p + c.height + spacing, 0);
+
+                            const offsetY = links.filter((_, i2) => i2 < i).reduce((p, c) => p + c.height + spacing, 0) - totalSizeY / 2;
+                            const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
+
+                            const srcNode = l.getSrcNode(graph.nodes);
+                            const targetNode = l.getTargetNode(graph.nodes);
+
+                            const srcStep = getStep(srcNode);
+                            const targetStep = getStep(targetNode);
+                            
+                            const point1 = { x: srcNode.x + srcStep, y: srcNode.height + srcNode.y };
+                            const point2 = { x: targetNode.x + targetStep, y: targetNode.y };
+                            
+                            const distY = point1.y - point2.y; // a
+                            const distX = point1.x - point2.x; // b
+                            
+                            const x1 = 0;
+                            const x2 = offsetY * distX / distY;
+                            
+                            const x = Math.abs(distY) >= 150 ? x2 : x1;
+
+                            offset = {
+                                x: (srcStep + targetStep) / 2 + x,
+                                y: offsetY
                             };
                         } else {
-                            const targetNode = l.getTargetNode(graph.nodes);
-                            point2 = { x: targetNode.x + getStep(targetNode) + viewport.x, y: targetNode.y + viewport.y };
+                            offset = {
+                                x: 0,
+                                y: 0
+                            };
                         }
-                        
-                        return <LinkLine key={l.guid} point1={point1} point2={point2} isSplit={l.hasTargetNode} />
-                    }
-                }))}
 
-                {graph.groupedLinks.filter(l => l[0].getSrcNode(graph.nodes).subGraphGUID === currentSubGraphGUIDs[0]).map(links => links.map((l, i) => {
-                    let offset: { x: number, y: number };
-
-                    if(l.hasTargetNode) {
-                        const spacing = 5;
-                        const totalSizeY = links.reduce((p, c) => p + c.height + spacing, 0);
-
-                        const offsetY = links.filter((_, i2) => i2 < i).reduce((p, c) => p + c.height + spacing, 0) - totalSizeY / 2;
-                        const getStep = (node: GraphNode) => node.width / (links.length + 1) * (i + 1);
-
-                        const srcNode = l.getSrcNode(graph.nodes);
-                        const targetNode = l.getTargetNode(graph.nodes);
-
-                        const srcStep = getStep(srcNode);
-                        const targetStep = getStep(targetNode);
-                        
-                        const point1 = { x: srcNode.x + srcStep, y: srcNode.height + srcNode.y };
-                        const point2 = { x: targetNode.x + targetStep, y: targetNode.y };
-                        
-                        const distY = point1.y - point2.y; // a
-                        const distX = point1.x - point2.x; // b
-                        
-                        const x1 = 0;
-                        const x2 = offsetY * distX / distY;
-                        
-                        const x = Math.abs(distY) >= 150 ? x2 : x1;
-
-                        offset = {
-                            x: (srcStep + targetStep) / 2 + x,
-                            y: offsetY
+                        return <StoryLinkView
+                            offset={offset}
+                            forceUpdate={forceUpdate}
+                            isSelected={selectedLinks.includes(l)}
+                            nodes={graph.nodes}
+                            key={l.guid}
+                            link={l}
+                            deleteLink={(force: boolean) => {
+                                if(force || confirm("Are you sure ?")) {
+                                    graph.links = graph.links.filter(e => e !== l);
+                                    graph.saveHistory();
+                                    forceUpdate();
+                                }
+                            }}
+                            onDragStart={updateDragStart(l)}
+                        />
+                    }))}
+                    
+                    {graph.nodes.filter(n => n.subGraphGUID === currentSubGraphGUIDs[0]).map((n) => <StoryNodeView forceUpdate={forceUpdate} isSelected={selectedNodes.includes(n)} key={n.guid} node={n} onDragStart={updateDragStart(n)} onDrawingLineStart={(node) => {
+                        drawingLine = {
+                            srcNode: node,
+                            x: undefined,
+                            y: undefined
                         };
-                    } else {
-                        offset = {
-                            x: 0,
-                            y: 0
-                        };
-                    }
+                    }} openSubGraph={(id: string) => {
+                        if(graph.nodes.some(n => n.guid === id)) {
+                            setCurrentSubGraphGUIDs([ id, ...currentSubGraphGUIDs ]);
+                            forceUpdate();
+                        }
+                    }} onDrawingLineEnd={(node) => {
+                        if(drawingLine) {
+                            if(drawingLine.srcNode !== node && Config.instance.currentLinkMode.hasTargetNode /*&& Graph.current.links.every(link => [link.srcNodeGuid, link.targetNodeGuid].some(guid => ![node.guid, drawingLine.srcNode.guid].includes(guid)))*/) {
+                                const link = new GraphLink();
+                                link.srcNodeGuid = drawingLine.srcNode.guid;
+                                link.targetNodeGuid = node.guid;
+                                graph.createLink(link, Config.instance.currentLinkModeId);
 
-                    return <StoryLinkView
-                        offset={offset}
-                        forceUpdate={forceUpdate}
-                        isSelected={selectedLinks.includes(l)}
-                        nodes={graph.nodes}
-                        key={l.guid}
-                        link={l}
-                        deleteLink={(force: boolean) => {
-                            if(force || confirm("Are you sure ?")) {
-                                graph.links = graph.links.filter(e => e !== l);
                                 graph.saveHistory();
-                                forceUpdate();
                             }
-                        }}
-                        onDragStart={updateDragStart(l)}
-                    />
-                }))}
-                
-                {graph.nodes.filter(n => n.subGraphGUID === currentSubGraphGUIDs[0]).map((n) => <StoryNodeView forceUpdate={forceUpdate} isSelected={selectedNodes.includes(n)} key={n.guid} node={n} onDragStart={updateDragStart(n)} onDrawingLineStart={(node) => {
-                    drawingLine = {
-                        srcNode: node,
-                        x: undefined,
-                        y: undefined
-                    };
-                }} openSubGraph={(id: string) => {
-                    if(graph.nodes.some(n => n.guid === id)) {
-                        setCurrentSubGraphGUIDs([ id, ...currentSubGraphGUIDs ]);
-                        forceUpdate();
-                    }
-                }} onDrawingLineEnd={(node) => {
-                    if(drawingLine) {
-                        if(drawingLine.srcNode !== node && Config.instance.currentLinkMode.hasTargetNode /*&& Graph.current.links.every(link => [link.srcNodeGuid, link.targetNodeGuid].some(guid => ![node.guid, drawingLine.srcNode.guid].includes(guid)))*/) {
-                            const link = new GraphLink();
-                            link.srcNodeGuid = drawingLine.srcNode.guid;
-                            link.targetNodeGuid = node.guid;
-                            graph.createLink(link, Config.instance.currentLinkModeId);
+                            
+                            drawingLine = undefined;
 
-                            graph.saveHistory();
+                            forceUpdate();
                         }
-                        
-                        drawingLine = undefined;
+                    }} deleteNode={(force: boolean) => {
+                        if(force || confirm("Are you sure ?")) {
+                            graph.deleteNode(n);
+                            graph.saveHistory();
 
-                        forceUpdate();
+                            forceUpdate();
+                        }
+                    }} />)}
+                    {drawingLine && drawingLine.x !== undefined
+                        ? <LinkLine point1={{ x: drawingLine.srcNode.x + drawingLine.srcNode.width / 2 + viewport.x, y: drawingLine.srcNode.height + drawingLine.srcNode.y + viewport.y }} point2={{ x: drawingLine.x, y: drawingLine.y }} isSplit={true} />
+                        : undefined
                     }
-                }} deleteNode={(force: boolean) => {
-                    if(force || confirm("Are you sure ?")) {
-                        graph.deleteNode(n);
-                        graph.saveHistory();
-
-                        forceUpdate();
-                    }
-                }} />)}
-                {drawingLine && drawingLine.x !== undefined
-                    ? <LinkLine point1={{ x: drawingLine.srcNode.x + drawingLine.srcNode.width / 2 + viewport.x, y: drawingLine.srcNode.height + drawingLine.srcNode.y + viewport.y }} point2={{ x: drawingLine.x, y: drawingLine.y }} isSplit={true} />
-                    : undefined
-                }
-            </> : undefined}
+                </>
+            })() : undefined}
         </div>
 
         <div className="types-switch" title="CTRL => change modes" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>

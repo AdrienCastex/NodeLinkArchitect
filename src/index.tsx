@@ -127,12 +127,14 @@ let root: ReactDOMClient.Root;
 				
 				updateView();
 			} else if((selectedNodes.length > 0 || selectedLinks.length > 0) && e.ctrlKey && e.key.toLowerCase() === 'c') { // copy
+				const viewport = Viewport.instance.viewport;
+
 				const dataStr = JSON.stringify({
 					nodes: selectedNodes,
 					links: selectedLinks.concat(Graph.current.links.filter(l => !selectedLinks.includes(l) && selectedNodes.some(n => n.guid === l.srcNodeGuid) && (!l.hasTargetNode || selectedNodes.some(n => n.guid === l.targetNodeGuid)))),
 					initialPosition: {
-						x: Viewport.instance.x,
-						y: Viewport.instance.y
+						x: viewport.x,
+						y: viewport.y
 					}
 				});
 
@@ -151,14 +153,16 @@ let root: ReactDOMClient.Root;
 						const blob = await clipboardItemData.getType('text/plain');
 						const dataStr = await blob.text();
 						const data = JSON.parse(dataStr);
+						
+        				const viewport = Viewport.instance.viewport;
 
 						const cloned = Graph.current.clone({
 							nodes: data.nodes,
 							links: data.links,
 							cloneExternalLinks: false,
 							positionOffset: {
-								x: data.initialPosition.x - Viewport.instance.x,
-								y: data.initialPosition.y - Viewport.instance.y,
+								x: data.initialPosition.x - viewport.x,
+								y: data.initialPosition.y - viewport.y,
 							}
 						});
 

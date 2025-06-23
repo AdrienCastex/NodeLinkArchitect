@@ -7,7 +7,7 @@ import { Properties } from "../Properties/Properties";
 export function StoryNodeView(props: { forceUpdate: () => void, isSelected: boolean, node: GraphNode, openSubGraph(id: string): void, deleteNode(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void, onDrawingLineStart(node: GraphNode): void, onDrawingLineEnd(node: GraphNode): void }) {
     const node = props.node;
 
-    const viewport = Viewport.instance;
+    const viewport = Viewport.instance.viewport;
 
     const isHeightResizable = node.isHeightResizable;
 

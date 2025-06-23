@@ -4,8 +4,22 @@ import { Graph } from "./Graph";
 export class Viewport implements IViewport {
     public static instance = new Viewport();
 
+    protected graph: Graph;
+    protected viewports: {
+        [guid: string]: IViewport
+    };
     public get viewport() {
-        return currentSubGraphGuid ? Graph.current.nodes.find(n => n.guid === currentSubGraphGuid).viewport : Graph.current.viewport;
+        if(this.graph !== Graph.current) {
+            this.viewports = {};
+        }
+
+        let viewport = this.viewports[currentSubGraphGuid];
+        if(!viewport) {
+            viewport = currentSubGraphGuid ? Graph.current.nodes.find(n => n.guid === currentSubGraphGuid).viewport : Graph.current.viewport;
+            this.viewports[currentSubGraphGuid] = viewport;
+        }
+        
+        return viewport;
     }
 
     public get x() {

@@ -6,17 +6,13 @@ import { Properties } from "../Properties/Properties";
 
 export function StoryLinkView(props: { offset: { x: number, y: number }, forceUpdate: () => void, isSelected: boolean, nodes: GraphNode[], link: GraphLink, deleteLink(force: boolean): void, onDragStart(update: (e: { x: number, y: number }, dragStart: { x: number, y: number }) => void): void }) {
     const link = props.link;
-    
-    let initialPos: { x: number, y: number };
 
-    const viewport = Viewport.instance;
+    const viewport = Viewport.instance.viewport;
 
     const srcNode = link.getSrcNode(props.nodes);
-    const targetNode = link.getTargetNode(props.nodes);
+    const targetNode = link.hasTargetNode ? link.getTargetNode(props.nodes) : undefined;
 
     const width = link.type.headerPropertyId ? link.width : 25;
-
-    const isHeightResizable = link.isHeightResizable;
 
     const style: React.CSSProperties = {
         top: (!link.hasTargetNode ? link.y : (srcNode.y + srcNode.height + targetNode.y) / 2) + viewport.y + props.offset.y,
@@ -29,6 +25,10 @@ export function StoryLinkView(props: { offset: { x: number, y: number }, forceUp
             <div className="remove-btn" onClick={(e) => props.deleteLink(e.ctrlKey)}>x</div>
         </div>;
     }
+    
+    let initialPos: { x: number, y: number };
+
+    const isHeightResizable = link.isHeightResizable;
 
     style.height = `${link.height}px`;
 

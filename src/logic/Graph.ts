@@ -326,18 +326,21 @@ export class Graph {
         return parenting;
     }
 
-    public static groupLinks(links: GraphLink[]) {
+    public static groupLinks(links: GraphLink[], predicate?: (link: GraphLink) => boolean) {
+        predicate = predicate || (() => true);
         const groups: { [id: string]: GraphLink[] } = {};
 
         for(const link of links) {
-            const groupId = link.type.hasTargetNode ? (link.srcNodeGuid + ' -> ' + link.targetNodeGuid) : link.guid;
-            let groupArray = groups[groupId];
-            if(!groupArray) {
-                groupArray = [];
-                groups[groupId] = groupArray;
-            }
+            if(predicate(link)) {
+                const groupId = link.type.hasTargetNode ? (link.srcNodeGuid + ' -> ' + link.targetNodeGuid) : link.guid;
+                let groupArray = groups[groupId];
+                if(!groupArray) {
+                    groupArray = [];
+                    groups[groupId] = groupArray;
+                }
 
-            groupArray.push(link);
+                groupArray.push(link);
+            }
         }
 
         return Object.values(groups);
@@ -995,6 +998,17 @@ export class GraphLink extends GraphNodeLink {
     
     srcNodeGuid: string
     targetNodeGuid: string
+
+    protected _subGraphGUID: { value: string };
+    public get subGraphGUID() {
+        if(!this._subGraphGUID) {
+            this._subGraphGUID = {
+                value: this.getSrcNode(Graph.current.nodes).subGraphGUID
+            };
+        }
+
+        return this._subGraphGUID.value;
+    }
 
     protected _srcNode: GraphNode;
     getSrcNode(nodes: GraphNode[]) {

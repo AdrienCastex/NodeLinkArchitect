@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Graph, GraphNode, GraphNodeLink } from "../Graph";
+import { Graph, GraphNodeLink } from "../Graph";
 import { Editor } from "../Editor";
 import { Config, ConfigOptionsPropViewType } from "../Config";
 import { Form } from "react-bootstrap";
