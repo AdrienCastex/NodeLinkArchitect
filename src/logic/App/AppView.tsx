@@ -285,6 +285,18 @@ export function AppView() {
         //}
 
         Graph.current = Graph.parse(code);
+        
+        if(saveLoadServerUrl) {
+            const lib = await fetch(saveLoadServerUrl + '/lib', {
+                method: "GET",
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(r => r.text()).catch(() => '');
+
+            Graph.current.lib = lib;
+        }
+
         Graph.resetHistory();
         setGraph(() => Graph.current);
         localStorage.setItem('code', code);

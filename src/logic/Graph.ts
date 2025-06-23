@@ -51,7 +51,6 @@ export class Graph {
         const graph = new Graph();
 
         graph.guid = data.guid;
-        graph.lib = data.lib ?? '';
         graph.viewport = data.viewport ?? graph.viewport;
         graph.openGroups = data.openGroups ?? graph.openGroups;
         graph.currentSubGraphGUIDs = data.currentSubGraphGUIDs ?? graph.currentSubGraphGUIDs;
@@ -596,7 +595,6 @@ export class Graph {
         return {
             version: Graph.currentVersion,
             guid: this.guid,
-            lib: this.lib,
             nodes: this.nodes.map(a => a.toJSON()),
             links: this.links.map(a => a.toJSON()),
             viewport: this.viewport,

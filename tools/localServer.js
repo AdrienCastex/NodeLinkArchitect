@@ -5,11 +5,13 @@ import { fileURLToPath } from "url";
 import child_process from 'child_process';
 
 const port = 1900;
+const root = path.dirname(fileURLToPath(import.meta.url));
 /**
  * File path where to save the code generated
  */
-const targetFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/Story/Story.tsx');
+const targetFile = path.join(root, '../src/Story/Story.tsx');
 const editorUrl = `https://adriencastex.github.io/NodeLinkArchitect/?serverUrl=http://localhost:${port}`;
+const libFiles = [];
 
 /**
  * @typedef {{ code: string, graph: any }} Data
@@ -29,6 +31,22 @@ const getData = () => {
     console.log('Data requested');
 
     return fs.readFileSync(targetFile);
+}
+const getLib = () => {
+    console.log('Lib requested');
+
+    let totalContent = '';
+    for(const file of libFiles) {
+        const filePath = path.join(root, file);
+
+        const content = fs.readFileSync(filePath)
+            .toString()
+            .replace(/^import .+$/img, '');
+
+        totalContent = `${totalContent}\n${content}`;
+    }
+
+    return totalContent;
 }
 
 const headers = {
@@ -68,7 +86,11 @@ const server = http.createServer((req, res) => {
         }
         case 'get': {
             res.writeHead(200, headers);
-            res.end(getData());
+            if(req.url === '/') {
+                res.end(getData());
+            } else {
+                res.end(getLib());
+            }
             break;
         }
     }
