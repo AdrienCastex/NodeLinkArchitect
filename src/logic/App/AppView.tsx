@@ -257,6 +257,7 @@ export function AppView() {
 
     const loadData = async () => {
         let codePromise: Promise<string>;
+        let libPromise: Promise<string>;
 
         if(saveLoadServerUrl) {
             codePromise = fetch(saveLoadServerUrl, {
@@ -269,33 +270,31 @@ export function AppView() {
             codePromise = navigator.clipboard.readText();
         }
         
-        const code = await codePromise;
-
-        //const configStr = localStorage.getItem('config');
-
-        //if(!configStr) {
-            const config = Graph.parseConfig(code);
-            if(config) {
-                // eslint-disable-next-line no-eval
-                const configGetter = eval(`() => { ${config} }`);
-                Config.instance = new Config(configGetter());
-                localStorage.setItem('config', config);
-                setConfigStr(config);
-            }
-        //}
-
-        Graph.current = Graph.parse(code);
-        
         if(saveLoadServerUrl) {
-            const lib = await fetch(saveLoadServerUrl + '/lib', {
+            libPromise = fetch(saveLoadServerUrl + '/lib', {
                 method: "GET",
                 headers: {
                     'Accept': 'application/json'
                 }
             }).then(r => r.text()).catch(() => '');
-
-            Graph.current.lib = lib;
+        } else {
+            libPromise = Promise.resolve('');
         }
+        
+        const code = await codePromise;
+        const lib = await libPromise;
+
+        const config = Graph.parseConfig(code);
+        if(config) {
+            // eslint-disable-next-line no-eval
+            const configGetter = eval(`() => { ${config} }`);
+            Config.instance = new Config(configGetter());
+            localStorage.setItem('config', config);
+            setConfigStr(config);
+        }
+
+        Graph.current = Graph.parse(code);
+        Graph.current.lib = lib;
 
         Graph.resetHistory();
         setGraph(() => Graph.current);
