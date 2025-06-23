@@ -257,7 +257,7 @@ export class Graph {
 
     guid = Graph.generateGUID();
 
-    lib: string = '';
+    public static lib: string = '';
     nodes: GraphNode[] = [];
     links: GraphLink[] = [];
     

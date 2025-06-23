@@ -36,7 +36,7 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
 
     const lineCtx: IConfigOptionsCodeWrapperCtx = {
         id: id,
-        lib: Graph.current.lib,
+        lib: Graph.lib,
         returnType: options.type
     };
 

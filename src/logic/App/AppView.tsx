@@ -282,7 +282,7 @@ export function AppView() {
         }
         
         const code = await codePromise;
-        const lib = await libPromise;
+        Graph.lib = await libPromise;
 
         const config = Graph.parseConfig(code);
         if(config) {
@@ -294,7 +294,6 @@ export function AppView() {
         }
 
         Graph.current = Graph.parse(code);
-        Graph.current.lib = lib;
 
         Graph.resetHistory();
         setGraph(() => Graph.current);
