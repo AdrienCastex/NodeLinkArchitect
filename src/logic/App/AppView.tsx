@@ -257,7 +257,8 @@ export function AppView() {
 
     const loadData = async () => {
         let codePromise: Promise<string>;
-        let libPromise: Promise<string>;
+        let virtualLibPromise: Promise<string>;
+        let inlineLibPromise: Promise<string>;
 
         if(saveLoadServerUrl) {
             codePromise = fetch(saveLoadServerUrl, {
@@ -271,18 +272,27 @@ export function AppView() {
         }
         
         if(saveLoadServerUrl) {
-            libPromise = fetch(saveLoadServerUrl + '/lib', {
+            virtualLibPromise = fetch(saveLoadServerUrl + '/virtual-lib', {
                 method: "GET",
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'text/plain'
+                }
+            }).then(r => r.text()).catch(() => '');
+
+            inlineLibPromise = fetch(saveLoadServerUrl + '/inline-lib', {
+                method: "GET",
+                headers: {
+                    'Accept': 'text/plain'
                 }
             }).then(r => r.text()).catch(() => '');
         } else {
-            libPromise = Promise.resolve('');
+            virtualLibPromise = Promise.resolve('');
+            inlineLibPromise = Promise.resolve('');
         }
         
         const code = await codePromise;
-        Graph.lib = await libPromise;
+        Graph.virtualLib = await virtualLibPromise;
+        Graph.inlineLib = await inlineLibPromise;
 
         const config = Graph.parseConfig(code);
         if(config) {

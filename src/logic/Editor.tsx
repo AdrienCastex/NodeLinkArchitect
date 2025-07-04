@@ -36,7 +36,7 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
 
     const lineCtx: IConfigOptionsCodeWrapperCtx = {
         id: id,
-        lib: Graph.lib,
+        lib: Graph.inlineLib,
         returnType: options.type
     };
 
@@ -44,11 +44,21 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     const after = options.skipConfig ? (options.codeAfter ?? '') : (options.codeAfter ?? '') + Config.instance.afterCode(lineCtx);
     const code = (before ? (before + '\n') : '') + (options.code ?? '') + (after ? ('\n' + after) : '');
 
-    const uri = monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`);
-    /*let model = monaco.editor.getModels().find(m => m.uri.toString() === uri.toString());
-    if(!model || model.isDisposed()) {
-        model = monaco.editor.createModel(code, options.language ?? "typescript", uri);
+    /*
+    if(!Graph.lib) {
+        return;
     }*/
+
+    if(Graph.virtualLib) {
+        if(!monaco.languages.typescript.typescriptDefaults.getExtraLibs()[`file:///lib.d.ts`]) {
+            monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+            monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
+            monaco.languages.typescript.typescriptDefaults.addExtraLib(Graph.virtualLib, `file:///lib.d.ts`);
+            monaco.languages.typescript.javascriptDefaults.addExtraLib(Graph.virtualLib, `file:///lib.d.ts`);
+        }
+    }
+
+    const uri = monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`);
     const model = monaco.editor.createModel(code, options.language ?? "typescript", uri);
 
     const editor = monaco.editor.create(options.domElement, {

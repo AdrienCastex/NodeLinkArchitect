@@ -32,8 +32,8 @@ const getData = () => {
 
     return fs.readFileSync(targetFile);
 }
-const getLib = () => {
-    console.log('Lib requested');
+const getInlineLib = () => {
+    console.log('Lib inline requested');
 
     let totalContent = '';
     for(const file of libFiles) {
@@ -45,6 +45,13 @@ const getLib = () => {
 
         totalContent = `${totalContent}\n${content}`;
     }
+
+    return totalContent;
+}
+const getVirtualLib = () => {
+    console.log('Lib virtual requested');
+
+    let totalContent = '';
 
     return totalContent;
 }
@@ -86,10 +93,16 @@ const server = http.createServer((req, res) => {
         }
         case 'get': {
             res.writeHead(200, headers);
-            if(req.url === '/') {
-                res.end(getData());
-            } else {
-                res.end(getLib());
+            switch(req.url) {
+                case '/':
+                    res.end(getData());
+                    break;
+                case '/virtual-lib':
+                    res.end(getVirtualLib());
+                    break;
+                case '/inline-lib':
+                    res.end(getInlineLib());
+                    break;
             }
             break;
         }
