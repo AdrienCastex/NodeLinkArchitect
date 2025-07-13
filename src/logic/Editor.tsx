@@ -65,7 +65,7 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
         ...monacoEditorOptionsBase,
         model: model,
         ...(options.isMonoline ? {} : {
-            wordWrap: 'bounded',
+            wordWrap: 'on',
             scrollbar: {
                 vertical: "auto",
                 horizontal: "auto",
