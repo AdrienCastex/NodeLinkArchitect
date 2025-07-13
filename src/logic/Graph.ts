@@ -71,18 +71,27 @@ export class Graph {
 
         const nodesMapping: { [srcGUID: string]: string } = {};
 
+        const updateOpenGroups = (originalId: string, clonedId: string) => {
+            const openGroupData = this.openGroups[originalId];
+            if(openGroupData) {
+                this.openGroups[clonedId] = openGroupData.slice();
+            }
+        }
+
         for(const node of nodes) {
             const newNode = GraphNode.clone(node);
             newNode.guid = Graph.generateGUID();
             newNodes.push(newNode);
 
             nodesMapping[node.guid] = newNode.guid;
+            updateOpenGroups(node.guid, newNode.guid);
 
             newNode.x += positionOffset.x;
             newNode.y += positionOffset.y;
         }
 
-        for(const node of nodes) {
+        for(let i = 0; i < nodes.length; ++i) {
+            const node = nodes[i];
             if(node.typeId === '_subGraph_') {
                 const subGraphID = node.guid;
 
@@ -103,6 +112,7 @@ export class Graph {
                 const newLink = GraphLink.clone(link);
                 newLink.guid = Graph.generateGUID();
                 newLinks.push(newLink);
+                updateOpenGroups(link.guid, newLink.guid);
 
                 newLink.srcNodeGuid = nodesMapping[newLink.srcNodeGuid];
                 if(newLink.hasTargetNode) {
@@ -115,17 +125,20 @@ export class Graph {
         }
         
         for(const node of nodes) {
-            const srcTargetLinks = this.links.filter(l => !links.some(l1 => l1.guid === l.guid)).filter(l => l.srcNodeGuid === node.guid || l.targetNodeGuid === node.guid);
+            const srcTargetLinks = this.links
+                .filter(l => links.every(l1 => l1.guid !== l.guid))
+                .filter(l => l.srcNodeGuid === node.guid/* || l.targetNodeGuid === node.guid*/);
 
             for(const link of srcTargetLinks) {
                 const srcFound = !!nodesMapping[link.srcNodeGuid];
                 const targetFound = link.hasTargetNode && !!nodesMapping[link.targetNodeGuid];
-                const isInternalLink = srcFound && targetFound;
+                const isInternalLink = srcFound && (!link.hasTargetNode || targetFound);
                 const isExternalLink = srcFound || targetFound;
 
                 if(isInternalLink || cloneExternalLinks && isExternalLink) {
                     const newLink = GraphLink.clone(link);
                     newLink.guid = Graph.generateGUID();
+                    updateOpenGroups(link.guid, newLink.guid);
 
                     if(srcFound) {
                         newLink.srcNodeGuid = nodesMapping[newLink.srcNodeGuid];

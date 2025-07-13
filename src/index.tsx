@@ -131,7 +131,13 @@ let root: ReactDOMClient.Root;
 
 				const dataStr = JSON.stringify({
 					nodes: selectedNodes,
-					links: selectedLinks.concat(Graph.current.links.filter(l => !selectedLinks.includes(l) && selectedNodes.some(n => n.guid === l.srcNodeGuid) && (!l.hasTargetNode || selectedNodes.some(n => n.guid === l.targetNodeGuid)))),
+					links: selectedLinks.concat(Graph.current.links.filter(l =>
+						!selectedLinks.includes(l)
+						&& selectedNodes.some(n => n.guid === l.srcNodeGuid) // link has a selected node as source
+						&& (
+							!l.hasTargetNode
+							|| selectedNodes.some(n => n.guid === l.targetNodeGuid) // link has a selected node as target
+						))),
 					initialPosition: {
 						x: viewport.x,
 						y: viewport.y
