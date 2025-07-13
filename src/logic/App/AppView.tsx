@@ -372,12 +372,19 @@ export function AppView() {
             })
             evtSource.addEventListener('message', (e) => {
                 const data: {
-                    eventId: 'new-lib' | 'connected'
+                    eventId: 'contentChanged',
+                    changeType: 'lib'
+                } | {
+                    eventId: 'connected'
                 } = JSON.parse(e.data);
                 
                 switch(data.eventId) {
-                    case 'new-lib': {
-                        loadLib();
+                    case 'contentChanged': {
+                        switch(data.changeType) {
+                            case 'lib':
+                                loadLib();
+                                break;
+                        }
                         break;
                     }
                 }
