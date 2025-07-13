@@ -53,7 +53,7 @@ const editorServer = new EditorServer({
 
 editorServer.watchAndNotify({
     rootFolder: path.join(root, libFilesRoot),
-    changeType: 'lib'
+    changeType: 'virtualLib'
 });
 
 editorServer.start();

@@ -5,7 +5,7 @@ import fs from "fs";
  * @typedef {{ code: string, graph: any }} Data
  */
 /**
- * @typedef {'lib'} NotificationChangeType
+ * @typedef {'virtualLib'} NotificationChangeType
  */
 /**
  * @typedef {{

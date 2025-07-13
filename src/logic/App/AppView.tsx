@@ -316,7 +316,7 @@ export function AppView() {
             setCurrentSubGraphGUIDs([]);
         }*/
     }
-    const loadLib = async () => {
+    const loadVirtualLib = async () => {
         let virtualLibPromise: Promise<string>;
         //let inlineLibPromise: Promise<string>;
         
@@ -373,7 +373,7 @@ export function AppView() {
             evtSource.addEventListener('message', (e) => {
                 const data: {
                     eventId: 'contentChanged',
-                    changeType: 'lib'
+                    changeType: 'virtualLib'
                 } | {
                     eventId: 'connected'
                 } = JSON.parse(e.data);
@@ -381,8 +381,8 @@ export function AppView() {
                 switch(data.eventId) {
                     case 'contentChanged': {
                         switch(data.changeType) {
-                            case 'lib':
-                                loadLib();
+                            case 'virtualLib':
+                                loadVirtualLib();
                                 break;
                         }
                         break;
@@ -848,7 +848,7 @@ export function AppView() {
 
             {serverUrl?.trim() && !evtSourceOpen ? <SideButton
                 onClick={async () => {
-                    loadLib();
+                    loadVirtualLib();
                 }}
                 desc={<>Load lib from server</>}
             >Lib ↺</SideButton> : undefined}
