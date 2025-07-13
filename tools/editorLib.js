@@ -240,8 +240,16 @@ export class EditorServer {
         }
     }
 
+    /**
+     * @param {string} url
+     * @returns {string}
+     */
+    dataEncodeURL(url) {
+        return `_data_${btoa(url)}`;
+    }
+
     get editorUrl() {
-        return `https://adriencastex.github.io/NodeLinkArchitect/?serverUrl=http://localhost:${this.port}`;
+        return `https://adriencastex.github.io/NodeLinkArchitect/?serverUrl=${this.dataEncodeURL(`http://localhost:${this.port}`)}`;
     }
 
     start() {

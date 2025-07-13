@@ -165,13 +165,19 @@ setInterval(() => {
     }
 }, 50);
 
-const getQueryVariable = (paramName: string, defaultValue: string = undefined): string => {
+const getQueryVariable = (paramName: string, defaultValue: string = undefined, isHybrid: boolean = false): string => {
     const query = window.location.search.substring(1);
     const variables = query.split('&');
     for(const variable of variables) {
         const keyValue = variable.split('=');
         if(keyValue[0] === paramName) {
-            return decodeURIComponent(keyValue[1]);
+            let value = decodeURIComponent(keyValue[1]);
+
+            if(isHybrid && value.startsWith('_data_')) {
+                value = atob(value.substring('_data_'.length));
+            }
+
+            return value;
         }
     }
 
@@ -186,7 +192,7 @@ export let saveLoadServerUrl: string;
 export function AppView() {
     const [currentDragging, setCurrentDragging] = useState<(e: { x: number, y: number }, dragStart: { x: number, y: number }) => void>();
     const [graph, setGraph] = useState<Graph>(Graph.current);
-    const [serverUrl, setServerUrl] = useState<string>(getQueryVariable('serverUrl') || localStorage.getItem('serverUrl') || '');
+    const [serverUrl, setServerUrl] = useState<string>(getQueryVariable('serverUrl', undefined, true) || localStorage.getItem('serverUrl') || '');
     const [configStr, setConfigStr] = useState<string>(localStorage.getItem('config') || defaultConfig);
     const [showConfigEditor, setShowConfigEditor] = useState<boolean>(false);
     const [currentSubGraphGUIDs, setCurrentSubGraphGUIDs] = useState<string[]>(Graph.current.currentSubGraphGUIDs);
