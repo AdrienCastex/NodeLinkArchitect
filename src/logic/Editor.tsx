@@ -23,15 +23,18 @@ export interface ICreateEditorOptions {
     id: string
 }
 
+export function updateEditorVirtualLib() {
+    monaco.languages.typescript.typescriptDefaults.setExtraLibs([{
+        content: Graph.virtualLib,
+        filePath: `file:///lib.d.ts`
+    }]);
+}
+
 export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
     if(!options.domElement) {
         return undefined;
     }
-/*
-    if(!options.domElement.hasAttribute("editorId")) {
-        options.domElement.setAttribute("editorId", Math.random().toString().replace("0.", "") + Date.now().toString());
-    }
-    const id = options.domElement.getAttribute("editorId");*/
+    
     const id = options.id.replace(/:/img, '');
 
     const lineCtx: IConfigOptionsCodeWrapperCtx = {
@@ -44,17 +47,10 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     const after = options.skipConfig ? (options.codeAfter ?? '') : (options.codeAfter ?? '') + Config.instance.afterCode(lineCtx);
     const code = (before ? (before + '\n') : '') + (options.code ?? '') + (after ? ('\n' + after) : '');
 
-    /*
-    if(!Graph.lib) {
-        return;
-    }*/
-
     if(Graph.virtualLib) {
         if(!monaco.languages.typescript.typescriptDefaults.getExtraLibs()[`file:///lib.d.ts`]) {
             monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
-            monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-            monaco.languages.typescript.typescriptDefaults.addExtraLib(Graph.virtualLib, `file:///lib.d.ts`);
-            monaco.languages.typescript.javascriptDefaults.addExtraLib(Graph.virtualLib, `file:///lib.d.ts`);
+            updateEditorVirtualLib();
         }
     }
 

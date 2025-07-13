@@ -6,7 +6,7 @@ import { Viewport } from "../Viewport";
 import { StoryLinkView } from "../StoryLink/StoryLinkView";
 import { Config } from "../Config";
 import { SideButton } from "./SideButton";
-import { Editor } from "../Editor";
+import { Editor, updateEditorVirtualLib } from "../Editor";
 import defaultConfig from '../DefaultConfig.txt';
 import configJsdoc from '../../../tools/jsdoc/jsdoc.txt';
 import { GraphTreeContainer } from "./GraphTree";
@@ -316,8 +316,39 @@ export function AppView() {
             setCurrentSubGraphGUIDs([]);
         }*/
     }
+    const loadLib = async () => {
+        let virtualLibPromise: Promise<string>;
+        //let inlineLibPromise: Promise<string>;
+        
+        if(saveLoadServerUrl) {
+            virtualLibPromise = fetch(saveLoadServerUrl + '/virtual-lib', {
+                method: "GET",
+                headers: {
+                    'Accept': 'text/plain'
+                }
+            }).then(r => r.text()).catch(() => '');
+/*
+            inlineLibPromise = fetch(saveLoadServerUrl + '/inline-lib', {
+                method: "GET",
+                headers: {
+                    'Accept': 'text/plain'
+                }
+            }).then(r => r.text()).catch(() => '');*/
+        } else {
+            virtualLibPromise = Promise.resolve('');
+            //inlineLibPromise = Promise.resolve('');
+        }
+        
+        Graph.virtualLib = await virtualLibPromise;
+        //Graph.inlineLib = await inlineLibPromise;
+
+        updateEditorVirtualLib();
+    }
     
     const viewport = Viewport.instance.viewport;
+
+    const [evtSource, setEvtSource] = useState<EventSource>();
+    const [evtSourceOpen, setEvtSourceOpen] = useState<boolean>(false);
 
     useEffect(() => {
         currentSubGraphGuid = currentSubGraphGUIDs[0];
@@ -327,6 +358,34 @@ export function AppView() {
     useEffect(() => {
         saveLoadServerUrl = serverUrl;
         localStorage.setItem('serverUrl', saveLoadServerUrl);
+        
+        if(evtSource) {
+            evtSource.close();
+        }
+        if(saveLoadServerUrl?.trim()) {
+            const evtSource = new EventSource(saveLoadServerUrl + '/notifications');
+            evtSource.addEventListener('open', () => {
+                setEvtSourceOpen(true);
+            })
+            evtSource.addEventListener('error', () => {
+                setEvtSourceOpen(false);
+            })
+            evtSource.addEventListener('message', (e) => {
+                const data: {
+                    eventId: 'new-lib' | 'connected'
+                } = JSON.parse(e.data);
+                
+                switch(data.eventId) {
+                    case 'new-lib': {
+                        loadLib();
+                        break;
+                    }
+                }
+            });
+            setEvtSource(evtSource);
+        } else if(evtSource) {
+            setEvtSource(undefined);
+        }
     }, [serverUrl]);
     useEffect(() => {
     }, [configStr]);
@@ -779,6 +838,13 @@ export function AppView() {
                 }}
                 desc={<>Load from [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}
             >Data ↺</SideButton>
+
+            {serverUrl?.trim() && !evtSourceOpen ? <SideButton
+                onClick={async () => {
+                    loadLib();
+                }}
+                desc={<>Load lib from server</>}
+            >Lib ↺</SideButton> : undefined}
 
             <SideButton onClick={async () => {
                 setShowConfigEditor(true);

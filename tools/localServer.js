@@ -11,7 +11,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
  */
 const targetFile = path.join(root, '../src/Story/Story.tsx');
 const editorUrl = `https://adriencastex.github.io/NodeLinkArchitect/?serverUrl=http://localhost:${port}`;
-const libFiles = [];
+const libFilesRoot = '../declarations';
 
 /**
  * @typedef {{ code: string, graph: any }} Data
@@ -35,26 +35,58 @@ const getData = () => {
 const getInlineLib = () => {
     console.log('Lib inline requested');
 
-    let totalContent = '';
-    for(const file of libFiles) {
-        const filePath = path.join(root, file);
-
-        const content = fs.readFileSync(filePath)
-            .toString()
-            .replace(/^import .+$/img, '');
-
-        totalContent = `${totalContent}\n${content}`;
-    }
-
-    return totalContent;
+    return '';
 }
 const getVirtualLib = () => {
     console.log('Lib virtual requested');
 
     let totalContent = '';
 
+    const process = (filePath) => {
+        if(fs.statSync(filePath).isDirectory()) {
+            for(const subFile of fs.readdirSync(filePath)) {
+                process(path.join(filePath, subFile));
+            }
+        } else {
+            const content = fs.readFileSync(filePath)
+                .toString()
+                .replace(/^import .+$/img, '')
+                .replace(/import\s*\([^)]+\)\./img, '')
+                .replace(/^\s*export\s*{\s*}\s*;?\s*$/img, '')
+                .replace(/^\s*export\s*/img, '')
+
+            totalContent = `${totalContent}\n// ${filePath}\n\n${content}\n`;
+        }
+    }
+    process(path.join(root, libFilesRoot));
+
     return totalContent;
 }
+
+/**
+ * @type {{ res: http.ServerResponse }[]}
+ */
+const notificationClients = [];
+let notifyWithDelayTimeout;
+const notifyWithDelay = () => {
+    if(notifyWithDelayTimeout) {
+        clearTimeout(notifyWithDelayTimeout);
+    }
+    notifyWithDelayTimeout = setTimeout(() => {
+        notifyWithDelayTimeout = undefined;
+
+        for(const client of notificationClients) {
+            client.res.write(`data: ${JSON.stringify({
+                eventId: 'new-lib',
+            })}\n\n`);
+        }
+        console.log('Clients notified');
+    }, 50);
+}
+fs.watch(path.join(root, libFilesRoot), { recursive: true }, (event, filename) => {
+    console.log('Lib file change detected: ' + filename);
+    notifyWithDelay();
+});
 
 const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -102,6 +134,36 @@ const server = http.createServer((req, res) => {
                     break;
                 case '/inline-lib':
                     res.end(getInlineLib());
+                    break;
+                case '/notifications':
+                    const notifHeaders = {
+                        ...headers,
+                        'Content-Type': 'text/event-stream',
+                        'Connection': 'keep-alive',
+                        'Cache-Control': 'no-cache'
+                    };
+                    res.writeHead(200, notifHeaders);
+
+                    res.write(`data: ${JSON.stringify({
+                        eventId: 'connected',
+                    })}\n\n`);
+
+                    /**
+                     * @type {notificationClients[0]}
+                     */
+                    const notificationClient = {
+                        res: res
+                    }
+                    notificationClients.push(notificationClient);
+                    console.log('Client subscribed');
+
+                    req.on('close', () => {
+                        console.log('Client unsubscribed');
+                        const index = notificationClients.indexOf(notificationClient);
+                        if(index >= 0) {
+                            notificationClients.splice(index, 1);
+                        }
+                    });
                     break;
             }
             break;
