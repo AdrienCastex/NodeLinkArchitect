@@ -68,8 +68,10 @@ export class EditorServer {
             }
 
             console.log('Clients notified');
-        }, 50);
+        }, this.notificationDelayMs);
     }
+
+    notificationDelayMs = 50;
 
     /**
      *
