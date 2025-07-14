@@ -30,6 +30,8 @@ export function updateEditorVirtualLib() {
     }]);
 }
 
+const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
+
 export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
     if(!options.domElement) {
         return undefined;
@@ -72,16 +74,24 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
         ...options.overrideConfig,
     });
 
-    const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
-    const jsxHighlighter = jsxController.highlighterBuilder({
-        editor: editor,
-        filePath: uri.toString()
-    })
-    
-    jsxHighlighter.highlighter();
+    let editorDisposed = false;
+
+    let jsxHighlighter: ReturnType<MonacoJsxSyntaxHighlight['highlighterBuilder']>;
+    setTimeout(() => {
+        const model = editor.getModel();
+        if(!editorDisposed && model && !model.isDisposed()) {
+            jsxHighlighter = jsxController.highlighterBuilder({
+                editor: editor,
+                filePath: uri.toString()
+            });
+            
+            jsxHighlighter.highlighter();
+        }
+    });
 
     editor.onDidDispose(() => {
-        jsxHighlighter.dispose();
+        editorDisposed = true;
+        jsxHighlighter?.dispose();
         model.dispose();
     });
 
@@ -189,7 +199,7 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     editor.onDidChangeModelContent(() => {
         const model = editor.getModel();
         if(model && !model.isDisposed()) {
-            jsxHighlighter.highlighter();
+            jsxHighlighter?.highlighter();
         }
 
         if(skipOnChange) {

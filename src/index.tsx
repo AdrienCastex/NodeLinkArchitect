@@ -107,49 +107,77 @@ let root: ReactDOMClient.Root;
 				e.stopPropagation();
 				e.preventDefault();
 
-				const cloned = Graph.current.clone({
-					nodes: selectedNodes,
-					links: selectedLinks,
+				const result = Graph.current.clone({
+					selected: {
+						links: selectedLinks.map(e => e.guid),
+					},
+					references: Graph.current.deepGet(selectedNodes),
+					nodeSelectionSubGraphGuid: currentSubGraphGuid,
+					currentSubGraphGuid: currentSubGraphGuid,
+					cloneExternalLinks: e.shiftKey,
 					positionOffset: {
 						x: 10,
 						y: 10
-					},
-					cloneExternalLinks: e.shiftKey
+					}
 				});
 
 				Graph.current.saveHistory();
 
 				selectedNodes.splice(0);
-				selectedNodes.push(...cloned.nodes);
+				selectedNodes.push(...result.selection.nodes);
 
 				selectedLinks.splice(0);
-				selectedLinks.push(...cloned.links);
+				selectedLinks.push(...result.selection.links);
 				
 				updateView();
-			} else if((selectedNodes.length > 0 || selectedLinks.length > 0) && e.ctrlKey && e.key.toLowerCase() === 'c') { // copy
-				const viewport = Viewport.instance.viewport;
+			} else if((selectedNodes.length > 0 || selectedLinks.length > 0) && e.ctrlKey && ['c', 'x'].includes(e.key.toLowerCase())) { // copy/cut
+				e.stopPropagation();
+				e.preventDefault();
 
-				const dataStr = JSON.stringify({
-					nodes: selectedNodes,
-					links: selectedLinks.concat(Graph.current.links.filter(l =>
-						!selectedLinks.includes(l)
-						&& selectedNodes.some(n => n.guid === l.srcNodeGuid) // link has a selected node as source
-						&& (
-							!l.hasTargetNode
-							|| selectedNodes.some(n => n.guid === l.targetNodeGuid) // link has a selected node as target
-						))),
+				const viewport = Viewport.instance.viewport;
+				const isCut = e.key.toLowerCase() === 'x';
+
+				const data = {
+					selected: {
+						//nodes: selectedNodes.map(e => e.guid),
+						links: selectedLinks.map(e => e.guid),
+					},
+					references: Graph.current.deepGet(selectedNodes),
+					nodeSelectionSubGraphGuid: currentSubGraphGuid,
 					initialPosition: {
 						x: viewport.x,
 						y: viewport.y
 					}
-				});
+				};
+
+				const dataStr = JSON.stringify(data);
 
 				const clipboardItemData = new ClipboardItem({
 					"text/plain": dataStr
 				});
 
 				navigator.clipboard.write([clipboardItemData]);
+
+				if(isCut) {
+					const graph = Graph.current;
+
+					for(const n of selectedNodes) {
+						graph.deleteNode(n);
+					}
+					
+					graph.links = graph.links.filter(e => !selectedLinks.includes(e));
+					
+					graph.saveHistory();
+
+					selectedNodes.splice(0);
+					selectedLinks.splice(0);
+
+					updateView();
+				}
 			} else if(e.ctrlKey && e.key.toLowerCase() === 'v') { // paste
+				e.stopPropagation();
+				e.preventDefault();
+				
 				const clipboardItemDatas = await navigator.clipboard.read();
 
 				if(clipboardItemDatas && clipboardItemDatas.length > 0) {
@@ -158,31 +186,36 @@ let root: ReactDOMClient.Root;
 					if(clipboardItemData.types.includes('text/plain')) {
 						const blob = await clipboardItemData.getType('text/plain');
 						const dataStr = await blob.text();
-						const data = JSON.parse(dataStr);
+						const data: {
+							selected: {
+								links: string[],
+							}
+							references: ReturnType<Graph['deepGet']>,
+							nodeSelectionSubGraphGuid: string,
+							initialPosition: {
+								x: number,
+								y: number,
+							}
+						} = JSON.parse(dataStr);
 						
         				const viewport = Viewport.instance.viewport;
-
-						const cloned = Graph.current.clone({
-							nodes: data.nodes,
-							links: data.links,
-							cloneExternalLinks: false,
+						
+						const result = Graph.current.clone({
+							...data,
+							currentSubGraphGuid: currentSubGraphGuid,
 							positionOffset: {
 								x: data.initialPosition.x - viewport.x,
 								y: data.initialPosition.y - viewport.y,
 							}
-						});
-
-						for(const node of cloned.nodes) {
-							node.subGraphGUID = currentSubGraphGuid;
-						}
+						})
 
 						Graph.current.saveHistory();
 
 						selectedNodes.splice(0);
-						selectedNodes.push(...cloned.nodes);
+						selectedNodes.push(...result.selection.nodes);
 
 						selectedLinks.splice(0);
-						selectedLinks.push(...cloned.links);
+						selectedLinks.push(...result.selection.links);
 
 						updateView();
 					}

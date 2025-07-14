@@ -60,11 +60,47 @@ export class Graph {
         return graph;
     }
 
-    public clone(options: { nodes: GraphNode[], links: GraphLink[], positionOffset?: { x: number, y: number }, cloneExternalLinks?: boolean }) {
+    public deepGetFromGUID(nodes: string[]) {
+        return this.deepGet(nodes.map(guid => this.nodes.find(n => n.guid === guid)));
+    }
+    public deepGet(nodes: GraphNode[]) {
+        const nodesGuids = nodes.map(e => e.guid);
+
+        const resultNodes: GraphNode[] = [];
+        const internalLinks: GraphLink[] = this.links.filter(l => nodesGuids.includes(l.srcNodeGuid) && (!l.hasTargetNode || nodesGuids.includes(l.targetNodeGuid)));
+        const externalLinks: GraphLink[] = this.links.filter(l => l.hasTargetNode && nodesGuids.includes(l.srcNodeGuid) !== nodesGuids.includes(l.targetNodeGuid));
+
+        for(const node of nodes) {
+            resultNodes.push(node);
+
+            if(node.typeId === '_subGraph_') {
+                const subGraphGUID = node.guid;
+                const subGraph = this.deepGet(this.nodes.filter(n => n.subGraphGUID === subGraphGUID));
+
+                resultNodes.push(...subGraph.nodes);
+                internalLinks.push(...subGraph.internalLinks);
+            }
+        }
+
+        return {
+            nodes: resultNodes,
+            internalLinks: internalLinks,
+            externalLinks: externalLinks
+        }
+    }
+
+    /*
+    public clone(options: { nodes: GraphNode[], links: GraphLink[], positionOffset?: { x: number, y: number }, cloneExternalLinks?: boolean, insert?: boolean, references?: { nodes: GraphNode[], links: GraphLink[] }, keepSameIDs?: boolean }) {
         const positionOffset = options.positionOffset ?? { x: 0, y: 0 };
         const nodes = options.nodes;
         const links = options.links;
         const cloneExternalLinks = options.cloneExternalLinks ?? false;
+        const insert = options.insert ?? true;
+        const keepSameIDs = options.keepSameIDs ?? false;
+        const references = options.references ?? {
+            nodes: this.nodes,
+            links: this.links,
+        };
 
         const newNodes: GraphNode[] = [];
         const newLinks: GraphLink[] = [];
@@ -80,11 +116,15 @@ export class Graph {
 
         for(const node of nodes) {
             const newNode = GraphNode.clone(node);
-            newNode.guid = Graph.generateGUID();
+            if(!keepSameIDs) {
+                newNode.guid = Graph.generateGUID();
+            }
             newNodes.push(newNode);
 
             nodesMapping[node.guid] = newNode.guid;
-            updateOpenGroups(node.guid, newNode.guid);
+            if(insert) {
+                updateOpenGroups(node.guid, newNode.guid);
+            }
 
             newNode.x += positionOffset.x;
             newNode.y += positionOffset.y;
@@ -95,14 +135,24 @@ export class Graph {
             if(node.typeId === '_subGraph_') {
                 const subGraphID = node.guid;
 
-                const subGraphItems = this.nodes.filter(n => n.subGraphGUID === subGraphID);
+                const subGraphItems = references.nodes.filter(n => n.subGraphGUID === subGraphID);
                 const subGraphClonedItems = this.clone({
                     nodes: subGraphItems,
                     links: [],
+                    insert: insert,
+                    references: references,
+                    keepSameIDs: keepSameIDs
                 });
 
-                for(const item of subGraphClonedItems.nodes) {
-                    item.subGraphGUID = nodesMapping[subGraphID];
+                if(!keepSameIDs) {
+                    for(const item of subGraphClonedItems.nodes) {
+                        item.subGraphGUID = nodesMapping[subGraphID];
+                    }
+                }
+
+                if(!insert) {
+                    newNodes.push(...subGraphClonedItems.nodes);
+                    newLinks.push(...subGraphClonedItems.links);
                 }
             }
         }
@@ -110,13 +160,19 @@ export class Graph {
         for(const link of links) {
             if(nodesMapping[link.srcNodeGuid] && (!link.hasTargetNode || nodesMapping[link.targetNodeGuid])) {
                 const newLink = GraphLink.clone(link);
-                newLink.guid = Graph.generateGUID();
+                if(!keepSameIDs) {
+                    newLink.guid = Graph.generateGUID();
+                }
                 newLinks.push(newLink);
-                updateOpenGroups(link.guid, newLink.guid);
+                if(insert) {
+                    updateOpenGroups(link.guid, newLink.guid);
+                }
 
-                newLink.srcNodeGuid = nodesMapping[newLink.srcNodeGuid];
-                if(newLink.hasTargetNode) {
-                    newLink.targetNodeGuid = nodesMapping[newLink.targetNodeGuid];
+                if(!keepSameIDs) {
+                    newLink.srcNodeGuid = nodesMapping[newLink.srcNodeGuid];
+                    if(newLink.hasTargetNode) {
+                        newLink.targetNodeGuid = nodesMapping[newLink.targetNodeGuid];
+                    }
                 }
                 
                 newLink.x += positionOffset.x;
@@ -125,9 +181,9 @@ export class Graph {
         }
         
         for(const node of nodes) {
-            const srcTargetLinks = this.links
+            const srcTargetLinks = references.links
                 .filter(l => links.every(l1 => l1.guid !== l.guid))
-                .filter(l => l.srcNodeGuid === node.guid/* || l.targetNodeGuid === node.guid*/);
+                .filter(l => l.srcNodeGuid === node.guid);
 
             for(const link of srcTargetLinks) {
                 const srcFound = !!nodesMapping[link.srcNodeGuid];
@@ -137,17 +193,23 @@ export class Graph {
 
                 if(isInternalLink || cloneExternalLinks && isExternalLink) {
                     const newLink = GraphLink.clone(link);
-                    newLink.guid = Graph.generateGUID();
-                    updateOpenGroups(link.guid, newLink.guid);
-
-                    if(srcFound) {
-                        newLink.srcNodeGuid = nodesMapping[newLink.srcNodeGuid];
+                    if(!keepSameIDs) {
+                        newLink.guid = Graph.generateGUID();
                     }
-                    if(targetFound) {
-                        newLink.targetNodeGuid = nodesMapping[newLink.targetNodeGuid];
+                    if(insert) {
+                        updateOpenGroups(link.guid, newLink.guid);
                     }
 
-                    if(link.hasTargetNode) {
+                    if(!keepSameIDs) {
+                        if(srcFound) {
+                            newLink.srcNodeGuid = nodesMapping[newLink.srcNodeGuid];
+                        }
+                        if(targetFound) {
+                            newLink.targetNodeGuid = nodesMapping[newLink.targetNodeGuid];
+                        }
+                    }
+
+                    if(link.hasTargetNode && insert) {
                         this.links.push(newLink);
                     } else {
                         newLinks.push(newLink);
@@ -159,13 +221,105 @@ export class Graph {
             }
         }
 
-        this.nodes.push(...newNodes);
-        this.links.push(...newLinks);
+        if(insert) {
+            this.nodes.push(...newNodes);
+            this.links.push(...newLinks);
+        }
 
         return {
             nodes: newNodes,
             links: newLinks
         }
+    }*/
+
+    public clone(options: {
+        selected: {
+            links: string[],
+        }
+        references: ReturnType<Graph['deepGet']>,
+        cloneExternalLinks?: boolean
+        nodeSelectionSubGraphGuid: string,
+        positionOffset?: {
+            x: number,
+            y: number,
+        }
+        currentSubGraphGuid: string
+    }) {
+        const positionOffset = options.positionOffset;
+
+        const selection: {
+            nodes: GraphNode[],
+            links: GraphLink[],
+        } = {
+            nodes: [],
+            links: [],
+        };
+
+        let nodes: GraphNode[] = options.references.nodes;
+        let internalLinks: GraphLink[] = options.references.internalLinks;
+        let externalLinks: GraphLink[] = options.references.externalLinks;
+        if(nodes.length > 0 && (nodes[0] instanceof GraphNode)) {
+            nodes = JSON.parse(JSON.stringify(nodes));
+        }
+        if(internalLinks.length > 0 && (internalLinks[0] instanceof GraphLink)) {
+            internalLinks = JSON.parse(JSON.stringify(internalLinks));
+        }
+        if(options.cloneExternalLinks && externalLinks.length > 0 && (externalLinks[0] instanceof GraphLink)) {
+            externalLinks = JSON.parse(JSON.stringify(externalLinks));
+        }
+
+        const guidMapping = new Map<string, string>();
+        for(const node of nodes) {
+            const newGuid = Graph.generateGUID();
+            guidMapping[node.guid] = newGuid;
+            node.guid = newGuid;
+        }
+        for(const node of nodes) {
+            node.subGraphGUID = guidMapping[node.subGraphGUID] ?? node.subGraphGUID;
+
+            const newNode = GraphNode.clone(node);
+            Graph.current.nodes.push(newNode);
+
+            if(options.nodeSelectionSubGraphGuid === node.subGraphGUID) {
+                selection.nodes.push(newNode);
+            }
+        }
+        for(const list of [internalLinks, options.cloneExternalLinks ? externalLinks : undefined].filter(Boolean)) {
+        for(const link of list) {
+            link.srcNodeGuid = guidMapping[link.srcNodeGuid] ?? link.srcNodeGuid;
+            link.targetNodeGuid = guidMapping[link.targetNodeGuid] ?? link.targetNodeGuid;
+            
+            const linkGuidOrigin = link.guid;
+            const newGuid = Graph.generateGUID();
+            guidMapping[link.guid] = newGuid;
+            link.guid = newGuid;
+
+            const newNode = GraphLink.clone(link);
+            Graph.current.links.push(newNode);
+            
+            if(options.selected.links.includes(linkGuidOrigin)) {
+                selection.links.push(newNode);
+            }
+        }
+        }
+
+        if(options.nodeSelectionSubGraphGuid !== options.currentSubGraphGuid) {
+            for(const node of selection.nodes) {
+                node.subGraphGUID = options.currentSubGraphGuid;
+            }
+        }
+
+        if(positionOffset) {
+            for(const list of [selection.links, selection.nodes])
+            for(const item of list) {
+                item.x += positionOffset.x;
+                item.y += positionOffset.y;
+            }
+        }
+
+        return {
+            selection: selection,
+        };
     }
 
     public save(serverUrl: string) {
