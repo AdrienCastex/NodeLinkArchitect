@@ -272,6 +272,7 @@ export class Graph {
         for(const node of nodes) {
             const newGuid = Graph.generateGUID();
             guidMapping[node.guid] = newGuid;
+            this.openGroups[newGuid] = this.openGroups[node.guid]?.slice();
             node.guid = newGuid;
         }
         for(const node of nodes) {
@@ -285,22 +286,23 @@ export class Graph {
             }
         }
         for(const list of [internalLinks, options.cloneExternalLinks ? externalLinks : undefined].filter(Boolean)) {
-        for(const link of list) {
-            link.srcNodeGuid = guidMapping[link.srcNodeGuid] ?? link.srcNodeGuid;
-            link.targetNodeGuid = guidMapping[link.targetNodeGuid] ?? link.targetNodeGuid;
-            
-            const linkGuidOrigin = link.guid;
-            const newGuid = Graph.generateGUID();
-            guidMapping[link.guid] = newGuid;
-            link.guid = newGuid;
+            for(const link of list) {
+                link.srcNodeGuid = guidMapping[link.srcNodeGuid] ?? link.srcNodeGuid;
+                link.targetNodeGuid = guidMapping[link.targetNodeGuid] ?? link.targetNodeGuid;
+                
+                const linkGuidOrigin = link.guid;
+                const newGuid = Graph.generateGUID();
+                guidMapping[link.guid] = newGuid;
+                this.openGroups[newGuid] = this.openGroups[link.guid]?.slice();
+                link.guid = newGuid;
 
-            const newNode = GraphLink.clone(link);
-            Graph.current.links.push(newNode);
-            
-            if(options.selected.links.includes(linkGuidOrigin)) {
-                selection.links.push(newNode);
+                const newNode = GraphLink.clone(link);
+                Graph.current.links.push(newNode);
+                
+                if(options.selected.links.includes(linkGuidOrigin) || !link.targetNodeGuid && selection.nodes.some(n => n.guid === link.srcNodeGuid)) {
+                    selection.links.push(newNode);
+                }
             }
-        }
         }
 
         if(options.nodeSelectionSubGraphGuid !== options.currentSubGraphGuid) {
