@@ -23,11 +23,40 @@ export interface ICreateEditorOptions {
     id: string
 }
 
+monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
 export function updateEditorVirtualLib() {
-    monaco.languages.typescript.typescriptDefaults.setExtraLibs([{
+    //const id = Graph.generateGUID();
+    //const url = `file:///lib${id}.d.ts`;
+    const url = `file:///lib.d.ts`;
+    /*
+    const libs = monaco.languages.typescript.typescriptDefaults.getExtraLibs();
+    if(libs[url]) {
+        delete libs[url];
+        //libs[url].content = Graph.virtualLib;
+    }
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(Graph.virtualLib, url);*/
+    const uri = monaco.Uri.parse(url);
+    const model = monaco.editor.getModel(uri);
+    if(model) {
+        model.setValue(Graph.virtualLib);
+    } else {
+        monaco.editor.createModel(Graph.virtualLib, 'typescript', uri);
+    }
+    /*monaco.languages.typescript.typescriptDefaults.setExtraLibs([{
         content: Graph.virtualLib,
-        filePath: `file:///lib.d.ts`
-    }]);
+        filePath: url
+    }]);*/
+    
+    const errorMarkers = monaco.editor
+      .getModelMarkers({})
+      .filter(marker => marker.severity === monaco.MarkerSeverity.Error)
+      .filter(e => e.resource.toString() === url)
+      .map(e => ({
+        error: e,
+        line: monaco.editor.getModel(e.resource).getValue().split('\n').slice(e.startLineNumber - 1 - 1, e.endLineNumber + 1),
+        content: monaco.editor.getModel(e.resource).getValue(),
+      }))
+    console.log(errorMarkers);
 }
 
 const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
@@ -35,6 +64,9 @@ const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
 export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
     if(!options.domElement) {
         return undefined;
+    }
+    if(!Graph.virtualLib) {
+        return;
     }
     
     const id = options.id.replace(/:/img, '');
@@ -49,12 +81,12 @@ export function createEditor(options: ICreateEditorOptions): monaco.editor.IStan
     const after = options.skipConfig ? (options.codeAfter ?? '') : (options.codeAfter ?? '') + Config.instance.afterCode(lineCtx);
     const code = (before ? (before + '\n') : '') + (options.code ?? '') + (after ? ('\n' + after) : '');
 
+    /*monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
     if(Graph.virtualLib) {
         if(!monaco.languages.typescript.typescriptDefaults.getExtraLibs()[`file:///lib.d.ts`]) {
-            monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
             updateEditorVirtualLib();
         }
-    }
+    }*/
 
     const uri = monaco.Uri.file(`f${id}.${options.fileExtension ?? 'tsx'}`);
     const model = monaco.editor.createModel(code, options.language ?? "typescript", uri);

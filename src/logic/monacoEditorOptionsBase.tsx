@@ -8,7 +8,7 @@ monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
 });
 
 export const monacoEditorOptionsBase: monaco.editor.IStandaloneEditorConstructionOptions = {
-    language: 'javascript',
+    language: 'typesript',
     automaticLayout: true,
     glyphMargin: false,
     folding: false,

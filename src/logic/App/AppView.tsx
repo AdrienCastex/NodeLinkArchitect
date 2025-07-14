@@ -300,6 +300,8 @@ export function AppView() {
         Graph.virtualLib = await virtualLibPromise;
         Graph.inlineLib = await inlineLibPromise;
 
+        updateEditorVirtualLib();
+
         const config = Graph.parseConfig(code);
         if(config) {
             // eslint-disable-next-line no-eval
@@ -400,8 +402,6 @@ export function AppView() {
             setEvtSource(undefined);
         }
     }, [serverUrl]);
-    useEffect(() => {
-    }, [configStr]);
 
     //const jsonJsTextarea = useRef<HTMLTextAreaElement>();
     //const libTextarea = useRef<HTMLTextAreaElement>();
