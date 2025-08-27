@@ -5,7 +5,7 @@ export function SideButton(props: { desc: React.ReactNode, onClick: () => void, 
 
     return <div className="side-btn">
         <div className="side-btn-desc">{props.desc}</div>
-        {props.sideItems ? <div className="side-btn-items">{props.sideItems}</div> : undefined}
+        {props.sideItems && props.sideItems.length > 0 ? <div className="side-btn-items">{props.sideItems}</div> : undefined}
         <div className="side-btn-content" onClick={() => props.onClick()}>{props.children}</div>
     </div>;
 }

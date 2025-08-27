@@ -804,6 +804,8 @@ export abstract class GraphNodeLink {
         this.setType();
     }
 
+    abstract subGraphGUID: string;
+
     protected abstract get info(): IConfigOptionsNodeLink;
 
     static fulfillType(properties: IGraphProperties, allInfo: IConfigOptionsNodeLink, typeId: string = allInfo.types.default ? 'default' : Object.keys(allInfo.types)[0]) {

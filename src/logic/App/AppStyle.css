@@ -404,3 +404,36 @@ polyline {
     color: red;
     text-shadow: 0px 0px 10px black;
 }
+
+.search-input-line {
+    width: calc(25.5ch + 30ch);
+    display: inline-block;
+}
+.search-input-line input {
+    width: 30ch !important;
+    height: 1.2em;
+    border: 1px solid black !important;
+    margin-right: 1ch !important;
+}
+.search-input-line .form-check {
+    margin-left: 1ch;
+}
+
+.search-result-wrapper {
+    position: absolute;
+    bottom: 2em;
+    right: 0px;
+    max-height: calc(100vh - 11em);
+    overflow: auto;
+}
+
+.search-result:hover {
+    background-color: orange;
+    color: black;
+}
+.search-result {
+    cursor: pointer;
+    background-color: white;
+    padding-left: 1ch;
+    padding-right: 1ch;
+}

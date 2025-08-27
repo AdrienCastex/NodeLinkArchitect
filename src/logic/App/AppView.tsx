@@ -10,6 +10,7 @@ import { Editor, updateEditorVirtualLib } from "../Editor";
 import defaultConfig from '../DefaultConfig.txt';
 import configJsdoc from '../../../tools/jsdoc/jsdoc.txt';
 import { GraphTreeContainer } from "./GraphTree";
+import { Form } from "react-bootstrap";
 
 let dragStart: { x: number, y: number };
 let drawingLine: { x: number, y: number, srcNode: GraphNode };
@@ -204,6 +205,8 @@ export function AppView() {
     }>(undefined);
     const [_, forceUpdate] = useReducer((x) => x + 1, 0);
     const [saving, setSaving] = useState<{ status: 'pending' | 'done' | 'error' }[]>([]);
+    const [search, setSearch] = useState<string>('');
+    const [searchCaseSensitive, setSearchCaseSensitive] = useState<boolean>(false);
 
     save = useCallback(() => {
         const currentSavingEntry: typeof saving[0] = {
@@ -839,6 +842,61 @@ export function AppView() {
         <GraphTreeContainer graph={graph} currentSubGraphGUIDs={currentSubGraphGUIDs} onChangeCurrentSubGraphGUIDs={(values) => setCurrentSubGraphGUIDs(values)} />
         
         <div className="btns-panel" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
+            <SideButton
+                onClick={save}
+                desc={<span className="search-input-line">Search <input type="text" value={search} onChange={(e) => {
+                    setSearch(e.target.value);
+                }} /> <Form.Check label="Case sensitive" type="checkbox" checked={searchCaseSensitive} onChange={(e) => setSearchCaseSensitive(e.target.checked)} /></span>}
+                sideItems={search?.trim() && graph ? (graph.nodes as GraphNodeLink[]).concat(graph.links)
+                    .filter(e => e.guid === search.trim() || e.type.properties && Object.keys(e.type.properties).some(prop => {
+                        let searchValue = search;
+                        let propValue = e.properties && e.properties[prop]?.value?.toString();
+                        if(propValue && !searchCaseSensitive) {
+                            propValue = propValue.toLowerCase();
+                            searchValue = searchValue.toLowerCase();
+                        }
+                        return propValue?.includes(searchValue);
+                    }))
+                    .map(e => <div key={e.guid} className="search-result" onClick={() => {
+                        const node = graph.nodes.find(n => n.guid === e.subGraphGUID);
+                        const viewport = node.viewport;
+                        
+                        viewport.x = (window.innerWidth / viewport.scale - e.width) / 2;
+                        viewport.y = (window.innerHeight / viewport.scale - e.height) / 2;
+                        
+                        selectedLinks = [];
+                        selectedNodes = [];
+                        
+                        if(e instanceof GraphNode) {
+                            const node = e as GraphNode;
+                            selectedNodes.push(node);
+
+                            viewport.x -= node.x;
+                            viewport.y -= node.y;
+                        } else {
+                            const link = e as GraphLink;
+                            selectedLinks.push(link);
+
+                            if(link.hasTargetNode) {
+                                const src = link.getSrcNode(graph.nodes);
+                                const target = link.getTargetNode(graph.nodes);
+
+                                viewport.x -= (target.x + src.x) / 2;
+                                viewport.y -= (target.y + src.y) / 2;
+                            } else {
+                                viewport.x -= link.x;
+                                viewport.y -= link.y;
+                            }
+                        }
+
+                        if(currentSubGraphGUIDs[0] !== e.subGraphGUID) {
+                            setCurrentSubGraphGUIDs([e.subGraphGUID, ...currentSubGraphGUIDs]);
+                        } else {
+                            forceUpdate();
+                        }
+                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}]</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
+            >Search</SideButton>
+
             <SideButton
                 onClick={save}
                 desc={<>Generate code to [{serverUrl?.trim() ? <><span className="strike">clipboard</span> / server</> : <>clipboard / <span className="strike">server</span></>}]</>}
