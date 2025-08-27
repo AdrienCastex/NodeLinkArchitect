@@ -906,7 +906,7 @@ export function AppView() {
                         } else {
                             forceUpdate();
                         }
-                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}]</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
+                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}:{e.type.name}]</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
             >Search</SideButton>
 
             <SideButton
