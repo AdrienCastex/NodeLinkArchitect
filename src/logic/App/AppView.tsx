@@ -859,7 +859,7 @@ export function AppView() {
                     }))
                     .map(e => <div key={e.guid} className="search-result" onClick={() => {
                         const node = graph.nodes.find(n => n.guid === e.subGraphGUID);
-                        const viewport = node.viewport;
+                        const viewport = node?.viewport ?? graph.viewport;
                         
                         viewport.x = (window.innerWidth / viewport.scale - e.width) / 2;
                         viewport.y = (window.innerHeight / viewport.scale - e.height) / 2;
@@ -890,11 +890,15 @@ export function AppView() {
                         }
 
                         if(currentSubGraphGUIDs[0] !== e.subGraphGUID) {
-                            setCurrentSubGraphGUIDs([e.subGraphGUID, ...currentSubGraphGUIDs]);
+                            if(!e.subGraphGUID) {
+                                setCurrentSubGraphGUIDs([]);
+                            } else {
+                                setCurrentSubGraphGUIDs([e.subGraphGUID, ...currentSubGraphGUIDs]);
+                            }
                         } else {
                             forceUpdate();
                         }
-                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}]</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
+                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}]</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
             >Search</SideButton>
 
             <SideButton
