@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Graph, GraphLink, GraphNode, GraphNodeLink } from "../Graph";
 import { StoryNodeView } from "../StoryNode/StoryNodeView";
 import "./AppStyle";
@@ -207,6 +207,7 @@ export function AppView() {
     const [saving, setSaving] = useState<{ status: 'pending' | 'done' | 'error' }[]>([]);
     const [search, setSearch] = useState<string>('');
     const [searchCaseSensitive, setSearchCaseSensitive] = useState<boolean>(false);
+    const searchInputRef = useRef<HTMLInputElement>();
 
     save = useCallback(() => {
         const currentSavingEntry: typeof saving[0] = {
@@ -843,8 +844,15 @@ export function AppView() {
         
         <div className="btns-panel" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
             <SideButton
-                onClick={save}
-                desc={<span className="search-input-line">Search <input type="text" value={search} onChange={(e) => {
+                onClick={() => {
+                    if(searchInputRef.current) {
+                        searchInputRef.current.focus();
+                    }
+                }}
+                forceOpen={!!search || document.activeElement === searchInputRef.current}
+                desc={<span className="search-input-line"><button onClick={() => {
+                    setSearch('');
+                }}>X</button> Search <input type="text" ref={searchInputRef} onFocus={() => forceUpdate()} onBlur={() => forceUpdate()} value={search} onChange={(e) => {
                     setSearch(e.target.value);
                 }} /> <Form.Check label="Case sensitive" type="checkbox" checked={searchCaseSensitive} onChange={(e) => setSearchCaseSensitive(e.target.checked)} /></span>}
                 sideItems={search?.trim() && graph ? (graph.nodes as GraphNodeLink[]).concat(graph.links)

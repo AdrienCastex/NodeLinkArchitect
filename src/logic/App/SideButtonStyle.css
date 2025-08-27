@@ -29,11 +29,12 @@
     display: inline-block;
     height: 1.55em;
 }
+.side-btn.force-open .side-btn-desc,
 .side-btn:hover .side-btn-desc {
     display: inline-block;
 }
 
-.btns-panel input {
+.btns-panel > input {
     display: inline-block;
     position: absolute;
     z-index: 10000;
@@ -42,3 +43,4 @@
     width: 35ch;
     border: 0px;
 }
+

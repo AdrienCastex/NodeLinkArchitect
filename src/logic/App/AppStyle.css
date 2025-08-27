@@ -406,17 +406,20 @@ polyline {
 }
 
 .search-input-line {
-    width: calc(25.5ch + 30ch);
     display: inline-block;
 }
-.search-input-line input {
-    width: 30ch !important;
+.search-input-line > input {
     height: 1.2em;
     border: 1px solid black !important;
-    margin-right: 1ch !important;
 }
-.search-input-line .form-check {
-    margin-left: 1ch;
+.search-input-line > button:hover {
+    background-color: orange;
+    color: black;
+}
+.search-input-line > button {
+    background-color: white;
+    border: 1px solid black;
+    cursor: pointer;
 }
 
 .search-result-wrapper {
