@@ -1,10 +1,14 @@
 
-.graph-tree-container {
+.graph-top-right-btns {
     position: absolute;
     right: 11px;
     top: 11px;
-    display: inline-block;
     z-index: 10000;
+}
+
+.graph-tree-container {
+    display: inline-block;
+    position: relative;
 
     opacity: 0.3;
 }
@@ -12,9 +16,15 @@
 .graph-tree-container:hover {
     opacity: 1;
 }
+.graph-tree-container .graph-tree-wrapper-ref {
+    position: relative;
+    display: inline;
+    width: 0px;
+    height: 0px;
+}
 .graph-tree-container .graph-tree-wrapper {
     position: absolute;
-    right: 6ch;
+    right: 0px;
     background-color: white;
     color: black;
     padding-right: 1ch;
@@ -35,6 +45,9 @@
     border-left: 2ch solid #2a2a29;
     /*padding-left: calc(2ch - 1ch);*/
 }
+.graph-tree-name .graph-tree-name-content {
+    margin-right: 3.5ch;
+}
 .graph-tree-name {
     padding: 0.5ch 1ch;
     border-left: 2ch solid #2a2a29;
@@ -49,6 +62,26 @@
 .graph-tree-name:hover {
     background-color: rgb(83, 167, 223);
     color: white;
+}
+.graph-tree-name .favorite {
+    float: right;
+    cursor: pointer;
+    padding: 0px 0.5ch;
+    border-radius: 0.25ch;
+}
+.graph-tree-name .favorite:not(.active):not(:hover) {
+    opacity: 0;
+}
+.graph-tree-name:hover .favorite {
+    opacity: 1 !important;
+}
+.graph-tree-name .favorite:hover {
+    background-color: orange;
+    color: #2a2a29;
+}
+.graph-tree-name .favorite.active:not(:hover) {
+    background-color: #2a2a29;
+    color: orange;
 }
 
 .graph-tree-container .side-btn {

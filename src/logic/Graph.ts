@@ -1098,10 +1098,12 @@ export abstract class GraphNodeLink {
 export class GraphNode extends GraphNodeLink {
     public subGraphGUID: string = undefined;
     public viewport: IViewport = undefined;
+    public isFavorite: boolean = undefined;
 
     public static parse(data, version: number) {
         const result = GraphNodeLink.parseAndWrite(new GraphNode(), data, version);
         result.subGraphGUID = data.subGraphGUID;
+        result.isFavorite = data.isFavorite;
         
         result.viewport = data.viewport;
         if(!data.viewport && result.typeId === '_subGraph_') {
@@ -1122,7 +1124,8 @@ export class GraphNode extends GraphNodeLink {
     public toJSON() {
         return Object.assign({
             subGraphGUID: this.subGraphGUID,
-            viewport: this.viewport
+            viewport: this.viewport,
+            isFavorite: this.isFavorite,
         }, super.toJSON());
     }
     

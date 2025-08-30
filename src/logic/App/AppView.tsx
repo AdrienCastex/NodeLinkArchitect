@@ -9,7 +9,7 @@ import { SideButton } from "./SideButton";
 import { Editor, updateEditorVirtualLib } from "../Editor";
 import defaultConfig from '../DefaultConfig.txt';
 import configJsdoc from '../../../tools/jsdoc/jsdoc.txt';
-import { GraphTreeContainer } from "./GraphTree";
+import { GraphTreeContainer, TreeFilterResult } from "./GraphTree";
 import { Form } from "react-bootstrap";
 
 let dragStart: { x: number, y: number };
@@ -841,7 +841,10 @@ export function AppView() {
             </div>
         </div>
         
-        <GraphTreeContainer graph={graph} currentSubGraphGUIDs={currentSubGraphGUIDs} onChangeCurrentSubGraphGUIDs={(values) => setCurrentSubGraphGUIDs(values)} />
+        <div className="graph-top-right-btns">
+            <GraphTreeContainer graph={graph} currentSubGraphGUIDs={currentSubGraphGUIDs} onChangeCurrentSubGraphGUIDs={(values) => setCurrentSubGraphGUIDs(values)} onUpdate={forceUpdate}>Tree</GraphTreeContainer>
+            <GraphTreeContainer graph={graph} currentSubGraphGUIDs={currentSubGraphGUIDs} onChangeCurrentSubGraphGUIDs={(values) => setCurrentSubGraphGUIDs(values)} onUpdate={forceUpdate} treeFilter={tree => tree.graphNode && tree.graphNode.isFavorite ? TreeFilterResult.Show : TreeFilterResult.HideButNotChildren}>★</GraphTreeContainer>
+        </div>
         
         <div className="btns-panel" style={{ pointerEvents: currentDragging ? 'none' : undefined }} onMouseDown={(e) => e.stopPropagation()}>
             <SideButton
@@ -913,7 +916,7 @@ export function AppView() {
                         } else {
                             forceUpdate();
                         }
-                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}:{e.type.name}]</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
+                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}:{e.type.name}]{(e as GraphNode).isFavorite ? ' ★' : ''}</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
             >Search</SideButton>
 
             <SideButton
