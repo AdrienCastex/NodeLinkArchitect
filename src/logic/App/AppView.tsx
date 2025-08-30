@@ -207,6 +207,7 @@ export function AppView() {
     const [saving, setSaving] = useState<{ status: 'pending' | 'done' | 'error' }[]>([]);
     const [search, setSearch] = useState<string>('');
     const [searchCaseSensitive, setSearchCaseSensitive] = useState<boolean>(false);
+    const [searchCurrentGraph, setSearchCurrentGraph] = useState<boolean>(false);
     const searchInputRef = useRef<HTMLInputElement>();
 
     save = useCallback(() => {
@@ -854,8 +855,14 @@ export function AppView() {
                     setSearch('');
                 }}>X</button> Search <input type="text" ref={searchInputRef} onFocus={() => forceUpdate()} onBlur={() => forceUpdate()} value={search} onChange={(e) => {
                     setSearch(e.target.value);
-                }} /> <Form.Check label="Case sensitive" type="checkbox" checked={searchCaseSensitive} onChange={(e) => setSearchCaseSensitive(e.target.checked)} /></span>}
+                }} onKeyDown={(e) => {
+                    if(e.key.toLowerCase() === 'escape') {
+                        searchInputRef.current.blur();
+                        setSearch('');
+                    }
+                }} /> <Form.Check label="Case sensitive" type="checkbox" checked={searchCaseSensitive} onChange={(e) => setSearchCaseSensitive(e.target.checked)} /> <Form.Check label="Current graph" type="checkbox" checked={searchCurrentGraph} onChange={(e) => setSearchCurrentGraph(e.target.checked)} /></span>}
                 sideItems={search?.trim() && graph ? (graph.nodes as GraphNodeLink[]).concat(graph.links)
+                    .filter(e => searchCurrentGraph ? e.subGraphGUID === currentSubGraphGuid : true)
                     .filter(e => e.guid === search.trim() || e.type.properties && Object.keys(e.type.properties).some(prop => {
                         let searchValue = search;
                         let propValue = e.properties && e.properties[prop]?.value?.toString();
