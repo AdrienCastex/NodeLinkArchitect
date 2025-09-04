@@ -206,9 +206,29 @@ export function AppView() {
     const [_, forceUpdate] = useReducer((x) => x + 1, 0);
     const [saving, setSaving] = useState<{ status: 'pending' | 'done' | 'error' }[]>([]);
     const [search, setSearch] = useState<string>('');
+    const [searchResult, setSearchResult] = useState<GraphNodeLink[]>([]);
     const [searchCaseSensitive, setSearchCaseSensitive] = useState<boolean>(false);
     const [searchCurrentGraph, setSearchCurrentGraph] = useState<boolean>(false);
     const searchInputRef = useRef<HTMLInputElement>();
+
+    useEffect(() => {
+        if(search?.trim()) {
+            setSearchResult((graph.nodes as GraphNodeLink[]).concat(graph.links)
+                .filter(e => searchCurrentGraph ? e.subGraphGUID === currentSubGraphGuid : true)
+                .filter(e => e.guid === search.trim() || e.type.properties && Object.keys(e.type.properties).some(prop => {
+                    let searchValue = search;
+                    let propValue = e.properties && e.properties[prop]?.value?.toString();
+                    if(propValue && !searchCaseSensitive) {
+                        propValue = propValue.toLowerCase();
+                        searchValue = searchValue.toLowerCase();
+                    }
+                    return propValue?.includes(searchValue);
+                }))
+            );
+        } else {
+            setSearchResult(undefined);
+        }
+    }, [search, searchCaseSensitive, searchCurrentGraph]);
 
     save = useCallback(() => {
         const currentSavingEntry: typeof saving[0] = {
@@ -864,59 +884,48 @@ export function AppView() {
                         setSearch('');
                     }
                 }} /> <Form.Check label="Case sensitive" type="checkbox" checked={searchCaseSensitive} onChange={(e) => setSearchCaseSensitive(e.target.checked)} /> <Form.Check label="Current graph" type="checkbox" checked={searchCurrentGraph} onChange={(e) => setSearchCurrentGraph(e.target.checked)} /></span>}
-                sideItems={search?.trim() && graph ? (graph.nodes as GraphNodeLink[]).concat(graph.links)
-                    .filter(e => searchCurrentGraph ? e.subGraphGUID === currentSubGraphGuid : true)
-                    .filter(e => e.guid === search.trim() || e.type.properties && Object.keys(e.type.properties).some(prop => {
-                        let searchValue = search;
-                        let propValue = e.properties && e.properties[prop]?.value?.toString();
-                        if(propValue && !searchCaseSensitive) {
-                            propValue = propValue.toLowerCase();
-                            searchValue = searchValue.toLowerCase();
-                        }
-                        return propValue?.includes(searchValue);
-                    }))
-                    .map(e => <div key={e.guid} className="search-result" onClick={() => {
-                        const node = graph.nodes.find(n => n.guid === e.subGraphGUID);
-                        const viewport = node?.viewport ?? graph.viewport;
-                        
-                        viewport.x = (window.innerWidth / viewport.scale - e.width) / 2;
-                        viewport.y = (window.innerHeight / viewport.scale - e.height) / 2;
-                        
-                        selectedLinks = [];
-                        selectedNodes = [];
-                        
-                        if(e instanceof GraphNode) {
-                            const node = e as GraphNode;
-                            selectedNodes.push(node);
+                sideItems={searchResult?.map(e => <div key={e.guid} className="search-result" onClick={() => {
+                    const node = graph.nodes.find(n => n.guid === e.subGraphGUID);
+                    const viewport = node?.viewport ?? graph.viewport;
+                    
+                    viewport.x = (window.innerWidth / viewport.scale - e.width) / 2;
+                    viewport.y = (window.innerHeight / viewport.scale - e.height) / 2;
+                    
+                    selectedLinks = [];
+                    selectedNodes = [];
+                    
+                    if(e instanceof GraphNode) {
+                        const node = e as GraphNode;
+                        selectedNodes.push(node);
 
-                            viewport.x -= node.x;
-                            viewport.y -= node.y;
+                        viewport.x -= node.x;
+                        viewport.y -= node.y;
+                    } else {
+                        const link = e as GraphLink;
+                        selectedLinks.push(link);
+
+                        if(link.hasTargetNode) {
+                            const src = link.getSrcNode(graph.nodes);
+                            const target = link.getTargetNode(graph.nodes);
+
+                            viewport.x -= (target.x + src.x) / 2;
+                            viewport.y -= (target.y + src.y) / 2;
                         } else {
-                            const link = e as GraphLink;
-                            selectedLinks.push(link);
-
-                            if(link.hasTargetNode) {
-                                const src = link.getSrcNode(graph.nodes);
-                                const target = link.getTargetNode(graph.nodes);
-
-                                viewport.x -= (target.x + src.x) / 2;
-                                viewport.y -= (target.y + src.y) / 2;
-                            } else {
-                                viewport.x -= link.x;
-                                viewport.y -= link.y;
-                            }
+                            viewport.x -= link.x;
+                            viewport.y -= link.y;
                         }
+                    }
 
-                        if(currentSubGraphGUIDs[0] !== e.subGraphGUID) {
-                            if(!e.subGraphGUID) {
-                                setCurrentSubGraphGUIDs([]);
-                            } else {
-                                setCurrentSubGraphGUIDs([e.subGraphGUID, ...currentSubGraphGUIDs]);
-                            }
+                    if(currentSubGraphGUIDs[0] !== e.subGraphGUID) {
+                        if(!e.subGraphGUID) {
+                            setCurrentSubGraphGUIDs([]);
                         } else {
-                            forceUpdate();
+                            setCurrentSubGraphGUIDs([e.subGraphGUID, ...currentSubGraphGUIDs]);
                         }
-                    }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}:{e.type.name}]{(e as GraphNode).isFavorite ? ' ★' : ''}</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined) : undefined}
+                    } else {
+                        forceUpdate();
+                    }
+                }}>{e.subGraphGUID ? graph.nodes.find(n => n.guid === e.subGraphGUID)?.properties?.name?.value + ' / ' : undefined}{e.guid} [{e instanceof GraphNode ? 'node' : 'link'}:{e.type.name}]{(e as GraphNode).isFavorite ? ' ★' : ''}</div>).reduce((p, c, i, a) => !p && a.length ? [<div className="search-result-wrapper" key={0} onWheel={e => e.stopPropagation()}>{a}</div>] as any : p, undefined)}
             >Search</SideButton>
 
             <SideButton
