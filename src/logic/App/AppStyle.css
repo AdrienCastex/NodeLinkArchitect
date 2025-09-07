@@ -40,12 +40,15 @@ html, body {
     height: 100%;
 }
 textarea,
+textarea.form-control,
 select,
-input:not([type="checkbox"]) {
-    padding: 0.25rem !important;
-    line-height: 1rem !important;
-    border: 0px !important;
-    border-radius: 0px !important;
+select.form-control,
+input:not([type="checkbox"]),
+input.form-control:not([type="checkbox"]) {
+    padding: 0.25rem;
+    line-height: 1rem;
+    border: 0px;
+    border-radius: 0px;
     /*border-bottom: 1px solid transparent !important;*/
 }
 input:not([type="checkbox"]) {
