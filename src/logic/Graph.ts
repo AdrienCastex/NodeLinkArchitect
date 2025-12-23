@@ -29,7 +29,11 @@ export class Graph {
                 }
             }
 
-            data = JSON.parse(data);
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return undefined;
+            }
         }
 
         if(Array.isArray(data)) {
@@ -42,7 +46,7 @@ export class Graph {
     public static parseConfig(data: any) {
         data = this.extractDataObject(data);
         
-        return data.config;
+        return data?.config;
     }
 
     public static parse(data: any) {
@@ -50,12 +54,12 @@ export class Graph {
 
         const graph = new Graph();
 
-        graph.guid = data.guid;
-        graph.viewport = data.viewport ?? graph.viewport;
-        graph.openGroups = data.openGroups ?? graph.openGroups;
-        graph.currentSubGraphGUIDs = data.currentSubGraphGUIDs ?? graph.currentSubGraphGUIDs;
-        graph.nodes = data.nodes.map(n => GraphNode.parse(n, data.version));
-        graph.links = data.links.map(l => GraphLink.parse(l, data.version));
+        graph.guid = data?.guid ?? graph.guid;
+        graph.viewport = data?.viewport ?? graph.viewport;
+        graph.openGroups = data?.openGroups ?? graph.openGroups;
+        graph.currentSubGraphGUIDs = data?.currentSubGraphGUIDs ?? graph.currentSubGraphGUIDs;
+        graph.nodes = data?.nodes.map(n => GraphNode.parse(n, data.version)) ?? graph.nodes;
+        graph.links = data?.links.map(l => GraphLink.parse(l, data.version)) ?? graph.links;
 
         return graph;
     }
@@ -462,6 +466,7 @@ export class Graph {
             }
             return entry;
         }
+        getParent(''); // create root
 
         for(const node of this.nodes) {
             const parentId = node.subGraphGUID || '';

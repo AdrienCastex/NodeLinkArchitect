@@ -327,7 +327,7 @@ export function AppView() {
 
         updateEditorVirtualLib();
 
-        const config = Graph.parseConfig(code);
+        const config = Graph.parseConfig(code) || defaultConfig;
         if(config) {
             // eslint-disable-next-line no-eval
             const configGetter = eval(`() => { ${config} }`);

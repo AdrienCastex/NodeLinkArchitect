@@ -25,6 +25,10 @@ export interface ICreateEditorOptions {
 
 monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
 export function updateEditorVirtualLib() {
+    if(!Graph.virtualLib) {
+        return;
+    }
+
     //const id = Graph.generateGUID();
     //const url = `file:///lib${id}.d.ts`;
     const url = `file:///lib.d.ts`;
@@ -64,9 +68,6 @@ const jsxController = new MonacoJsxSyntaxHighlight(getWorker(), monaco);
 export function createEditor(options: ICreateEditorOptions): monaco.editor.IStandaloneCodeEditor {
     if(!options.domElement) {
         return undefined;
-    }
-    if(!Graph.virtualLib) {
-        return;
     }
     
     const id = options.id.replace(/:/img, '');
